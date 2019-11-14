@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env pysurrogateescapeithon3
 # -*- coding: utf-8 -*-
 # Copyright © 2019 Taylor C. Richberger
 # This code is released under the license described in the LICENSE file
@@ -120,16 +120,19 @@ class Event(object):
 
     @property
     def path(self):
-        return self._watch.path / self._name
+        watch = self.watch
+        name = self.name
+        if watch and name:
+            return watch.path / name
 
     def __repr__(self):
-        return f'<Event name={self.name} mask={self.mask!r} cookie={self.cookie} watch={self.watch!r}>'
+        return f'<Event name={self.name!r} mask={self.mask!r} cookie={self.cookie} watch={self.watch!r}>'
 
 class Watch:
     def __init__(self, inotify, path, mask):
         self._mask = mask
         self._path = path
-        self._wd = libc.inotify_add_watch(inotify._fd, str(path).encode('utf-8', 'surrogateescapes'), mask)
+        self._wd = libc.inotify_add_watch(inotify._fd, str(path).encode('utf-8', 'surrogateescape'), mask)
 
     @property
     def wd(self):
@@ -144,27 +147,31 @@ class Watch:
         return self._mask
 
     def __repr__(self):
-        return f'<Watch path={self.path} mask={self.mask!r}>'
+        return f'<Watch path={self.path!r} mask={self.mask!r}>'
 
 
 class Inotify:
+    '''Core Inotify class.'''
     def __init__(self):
         self._fd = libc.inotify_init()
+
+        # Watches dict used for matching events up with the watch descriptor,
+        # in order to get the full item path.
         self._watches = {}
 
     def add_watch(self, path, mask):
         '''Add a watch dir.
 
-        :param path: a string, bytes, or pathlike object
+        :param path: a string, bytes, or PathLike object
         :param mask: a Mask
 
         :returns: The relevant Watch instance
         '''
 
         if isinstance(path, bytes):
-            path_bytes = path
-            path = Path(path_bytes.decode('utf-8', 'surrogateescapes'))
-        elif isinstance(path, str):
+            path = path.decode('utf-8', 'surrogateescape')
+
+        if not isinstance(path, os.PathLike):
             path = Path(path)
 
         watch = Watch(
@@ -196,10 +203,17 @@ class Inotify:
                 break
             event_struct = inotify_event.from_buffer_copy(event_buffer)
             length = event_struct.len
+            name = None
+
             if length > 0:
-                name = Path(buffer.read(length).decode('utf-8', 'surrogateescapes'))
-            else:
-                name = None
+                raw_name = buffer.read(length)
+                zero_pos = raw_name.find(0)
+                # If zero_pos is 0, we want name to stay None
+                if zero_pos != 0:
+                    # If zero_pos is -1, we want the whole name string, otherwise truncate the zeros
+                    if zero_pos > 0:
+                        raw_name = raw_name[:zero_pos]
+                    name = Path(raw_name.decode('utf-8', 'surrogateescape'))
 
             event = Event(
                 # wd may be -1
