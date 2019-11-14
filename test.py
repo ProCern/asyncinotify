@@ -10,11 +10,9 @@ import asyncio
 async def main():
     with Inotify() as inotify:
         inotify.add_watch('/tmp', Mask.ACCESS | Mask.MODIFY | Mask.OPEN | Mask.CREATE | Mask.DELETE | Mask.ATTRIB | Mask.CLOSE | Mask.MOVE | Mask.ONLYDIR)
-        async for events in inotify:
-            print('got batch of events!')
-            for event in events:
-                print(event)
-                print(repr(event.path))
+        async for event in inotify:
+            print(event)
+            print(repr(event.path))
 
 loop = asyncio.get_event_loop()
 try:

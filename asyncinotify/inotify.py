@@ -1,4 +1,4 @@
-#!/usr/bin/env pysurrogateescapeithon3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # Copyright © 2019 Taylor C. Richberger
 # This code is released under the license described in the LICENSE file
@@ -7,41 +7,23 @@ from enum import IntFlag
 from io import BytesIO
 from pathlib import Path
 import asyncio
-import ctypes
 import os
 import weakref
 
+# Python 3.7 suggests get_running_loop for library code
 try:
     from asyncio import get_running_loop
 except ImportError:
     from asyncio import get_event_loop as get_running_loop
 
-NAME_MAX = 255
+from .ffi import libc, inotify_event, inotify_event_size, NAME_MAX
 
-libc = ctypes.CDLL("libc.so.6", use_errno=True)
-
-class InotifyError(RuntimeError):
-    pass
-
-def check_return(value):
-    if value == -1:
-        errno = ctypes.get_errno()
-        raise InotifyError(f'Call failed, errno {errno}: {os.strerror(errno)}')
-    return value
-
-libc.inotify_init.restype = check_return
-libc.inotify_init.argtypes = ()
-libc.inotify_init1.restype = check_return
-libc.inotify_init1.argtypes = (ctypes.c_int,)
-libc.inotify_add_watch.restype = check_return
-libc.inotify_add_watch.argtypes = (ctypes.c_int, ctypes.c_char_p, ctypes.c_uint)
-libc.inotify_rm_watch.restype = check_return
-libc.inotify_rm_watch.argtypes = (ctypes.c_int, ctypes.c_int)
-
-class Mask(IntFlag):
+class InitFlags(IntFlag):
     CLOEXEC = 0x80000
     NONBLOCK = 0x800
 
+class Mask(IntFlag):
+    '''Bit-mask for adding a watch and for analyzing watch events'''
     ACCESS = 0x00000001
     MODIFY = 0x00000002
     ATTRIB = 0x00000004
@@ -67,17 +49,6 @@ class Mask(IntFlag):
     MASK_ADD = 0x20000000
     ISDIR = 0x40000000
     ONESHOT = 0x80000000
-
-class inotify_event(ctypes.Structure) :
-    _fields_ = [
-            ("wd", ctypes.c_int),
-            ("mask", ctypes.c_uint32),
-            ("cookie", ctypes.c_uint32),
-            ("len", ctypes.c_uint32),
-            # name follows, and is of a variable size
-        ]
-
-inotify_event_size = ctypes.sizeof(inotify_event)
 
 class Event(object):
 
@@ -151,13 +122,23 @@ class Watch:
 
 
 class Inotify:
-    '''Core Inotify class.'''
-    def __init__(self):
+    '''Core Inotify class.
+
+    Fetches events in bulk, if possible, and stores them internally.
+
+    :param int cache_size: The max number of full-size events to cache.  The
+        actual number may be higher, because most events will not be
+        full-sized.
+    '''
+    def __init__(self, cache_size=10):
+        self.cache_size = cache_size
         self._fd = libc.inotify_init()
 
         # Watches dict used for matching events up with the watch descriptor,
         # in order to get the full item path.
         self._watches = {}
+
+        self._events = None
 
     def add_watch(self, path, mask):
         '''Add a watch dir.
@@ -193,9 +174,16 @@ class Inotify:
     def close(self):
         os.close(self._fd)
 
-    # Future get
+    @property
+    def cache_size(self):
+        return self._cache_size
+
+    @cache_size.setter
+    def cache_size(self, value):
+        self._cache_size = int(value)
+
     def _get(self, future):
-        buffer = BytesIO(os.read(self._fd, inotify_event_size + NAME_MAX + 1))
+        buffer = BytesIO(os.read(self._fd, (inotify_event_size + NAME_MAX + 1) * self._cache_size))
         events = []
         while True:
             event_buffer = buffer.read(inotify_event_size)
@@ -227,12 +215,18 @@ class Inotify:
         future.set_result(events)
 
     async def get(self):
-        event_loop = get_running_loop()
-        future = event_loop.create_future()
-        event_loop.add_reader(self._fd, self._get, future)
-        result = await future
-        event_loop.remove_reader(self._fd)
-        return result
+        '''Get a single next event.
+
+        May actually pull multiple events from the inotify handle, and store
+        extras internally.  Will always only return one.
+        '''
+        if not self._events:
+            event_loop = get_running_loop()
+            future = event_loop.create_future()
+            event_loop.add_reader(self._fd, self._get, future)
+            self._events = await future
+            event_loop.remove_reader(self._fd)
+        return self._events.pop(0)
 
     def __aiter__(self):
         return self
