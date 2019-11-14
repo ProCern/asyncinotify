@@ -9,16 +9,19 @@ import asyncio
 
 async def main():
     with Inotify() as inotify:
-        inotify.add_watch('/tmp/illegal', Mask.ACCESS | Mask.MODIFY | Mask.OPEN | Mask.CREATE | Mask.DELETE | Mask.ATTRIB | Mask.CLOSE | Mask.MOVE | Mask.ONLYDIR)
+        inotify.add_watch('/tmp', Mask.ACCESS | Mask.MODIFY | Mask.OPEN | Mask.CREATE | Mask.DELETE | Mask.ATTRIB | Mask.CLOSE | Mask.MOVE | Mask.ONLYDIR)
         async for events in inotify:
             print('got batch of events!')
             for event in events:
                 print(event)
                 print(repr(event.path))
 
-event_loop = asyncio.get_event_loop()
+loop = asyncio.get_event_loop()
 try:
-    event_loop.run_until_complete(main())
+    loop.run_until_complete(main())
 except KeyboardInterrupt:
     print('shutting down')
+finally:
+    loop.run_until_complete(loop.shutdown_asyncgens())
+    loop.close()
 
