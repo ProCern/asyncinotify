@@ -11,17 +11,21 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
+os.environ['ASYNCINOTIFY_DO_NOT_IMPORT'] = 'TRUE'
+
 import sys
 sys.path.insert(0, os.path.abspath('.'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'asyncinotify'
-copyright = '2019, Taylor C. Richberger'
-author = 'Taylor C. Richberger'
+from asyncinotify import _meta
+
+project = _meta.data['name']
+author = _meta.data['author']
+copyright = '2019, ' + author
 
 # The full version, including alpha/beta/rc tags
-release = '0.2.0'
+release = _meta.data['version']
 
 
 # -- General configuration ---------------------------------------------------

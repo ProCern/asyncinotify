@@ -9,7 +9,7 @@ This depends on Python 3.6+ features, and will not work with prior versions.
 
 This works without any other external dependencies.
 
-The code is available on `GitLab <sources>`_ and the documentation is available on
+The code is available on GitLab_ and the documentation is available on
 ReadTheDocs_. The package itself is available on PyPi_.
 
 Installation
@@ -21,7 +21,7 @@ You know the drill::
 
 .. _ospackage: https://docs.python.org/3/library/os.html#file-names-command-line-arguments-and-environment-variables
 .. _surrogateescape: https://docs.python.org/3/library/codecs.html#surrogateescape
-.. _sources: https://gitlab.com/Taywee/asyncinotify
+.. _GitLab: https://gitlab.com/Taywee/asyncinotify
 .. _pathlib: https://docs.python.org/3/library/pathlib.html
 .. _ReadTheDocs: https://asyncinotify.readthedocs.io/en/latest/
 .. _PyPi: https://pypi.org/project/asyncinotify/

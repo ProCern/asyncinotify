@@ -4,7 +4,7 @@
 
 data = dict(
     name='asyncinotify',
-    version='0.2.0',
+    version='0.2.1',
     author='Taylor C. Richberger',
     description='A simple async python inotify library, focused on simplicity of use and operation, and leveraging modern Python features',
     license='MIT',

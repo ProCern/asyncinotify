@@ -3,6 +3,9 @@
 # Copyright © 2019 Taylor C. Richberger
 # This code is released under the license described in the LICENSE file
 
+import os
+os.environ['ASYNCINOTIFY_DO_NOT_IMPORT'] = 'TRUE'
+
 from setuptools import setup
 from pathlib import Path
 

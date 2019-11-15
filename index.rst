@@ -56,8 +56,8 @@ don't like, are badly documented, they work with paths in a non-idiomatic way,
 are not asynchronous, or are overengineered compared to the API they are
 wrapping.  I find that the last one is true for the majority of them.
 
-I encourage everybody to read the sources_ of this package.  They are quite
-simple and easy to understand.
+I encourage everybody to read the `sources <GitLab>`_ of this package.  They are
+quite simple and easy to understand.
 
 This library
 
@@ -113,7 +113,7 @@ Indices and tables
 
 .. _ospackage: https://docs.python.org/3/library/os.html#file-names-command-line-arguments-and-environment-variables
 .. _surrogateescape: https://docs.python.org/3/library/codecs.html#surrogateescape
-.. _sources: https://gitlab.com/Taywee/asyncinotify
+.. _GitLab: https://gitlab.com/Taywee/asyncinotify
 .. _pathlib: https://docs.python.org/3/library/pathlib.html
 .. _ReadTheDocs: https://asyncinotify.readthedocs.io/en/latest/
 .. _PyPi: https://pypi.org/project/asyncinotify/
