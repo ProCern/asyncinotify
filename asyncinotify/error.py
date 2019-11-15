@@ -4,4 +4,4 @@
 # This code is released under the license described in the LICENSE file
 
 class InotifyError(RuntimeError):
-    pass
+    '''Simple inotify error type, thrown for all errors in inotify ffi calls'''

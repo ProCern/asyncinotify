@@ -26,6 +26,7 @@ libc.inotify_rm_watch.restype = check_return
 libc.inotify_rm_watch.argtypes = (ctypes.c_int, ctypes.c_int)
 
 class inotify_event(ctypes.Structure) :
+    '''FFI struct for reading inotify events.  Should not be accessed externally.'''
     _fields_ = [
             ("wd", ctypes.c_int),
             ("mask", ctypes.c_uint32),

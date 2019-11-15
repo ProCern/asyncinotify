@@ -16,15 +16,15 @@ try:
 except ImportError:
     from asyncio import get_event_loop as get_running_loop
 
-from .ffi import libc, inotify_event, inotify_event_size, NAME_MAX
+from ._ffi import libc, inotify_event, inotify_event_size, NAME_MAX
 
 class InitFlags(IntFlag):
     '''Init flags for use with the :class:`Inotify` constructor.
 
-    You shouldn't have a reason to use this, as CLOEXEC will be desired because
-    there's no reason for exec'd children to inherit inotify handles here, and
-    NONBLOCK shouldn't even make a difference due to the handle always being
-    watched with select.
+    You shouldn't have a reason to use this, as :attr:`CLOEXEC` will be desired
+    because there's no reason for exec'd children to inherit inotify handles
+    here, and :attr:`NONBLOCK` shouldn't even make a difference due to the
+    handle always being watched with select.
     '''
 
     #: Set the close-on-exec (FD_CLOEXEC) flag on the new file descriptor.  See
@@ -63,7 +63,7 @@ class Mask(IntFlag):
     #: File or directory not opened for writing was closed.
     CLOSE_NOWRITE = 0x00000010
 
-    #: CLOSE_WRITE | CLOSE_NOWRITE
+    #: :attr:`CLOSE_WRITE` | :attr:`CLOSE_NOWRITE`
     CLOSE = CLOSE_WRITE | CLOSE_NOWRITE
 
     #: File or directory was opened.
@@ -77,7 +77,7 @@ class Mask(IntFlag):
     #: Note the cookie member in :class:`Event`.
     MOVED_TO = 0x00000080
 
-    #: MOVED_FROM | MOVED_TO
+    #: :attr:`MOVED_FROM: | :attr:`MOVED_TO`
     MOVE = MOVED_FROM | MOVED_TO
 
     #: File/directory created in watched directory (e.g., open(2) O_CREAT,
@@ -90,7 +90,7 @@ class Mask(IntFlag):
     #: Watched  file/directory  was  itself deleted.  (This event also occurs
     #: if an object is moved to another filesystem, since mv(1) in effect
     #: copies the file to the other filesystem and then deletes it from the
-    #: original filesystem.)  In addition, an IN_IGNORED event will
+    #: original filesystem.)  In addition, an :attr:`Mask.IGNORED` event will
     #: subsequently be generated for the watch descriptor.
     DELETE_SELF = 0x00000400
 
@@ -98,7 +98,7 @@ class Mask(IntFlag):
     MOVE_SELF = 0x00000800
 
     #: Filesystem containing watched object was unmounted.  In addition, an
-    #: IN_IGNORED event  will  subsequently  be  generated  for  the  watch
+    #: :attr:`Mask.IGNORED` event  will  subsequently  be  generated  for  the  watch
     #: descriptor.
     UNMOUNT = 0x00002000
 
@@ -124,7 +124,7 @@ class Mask(IntFlag):
     #: from the directory.  This can result in large numbers of uninteresting
     #: events for some applications (e.g., if  watching  /tmp,  in  which many
     #: applications create temporary files whose names are immediately
-    #: unlinked).  Specifying IN_EXCL_UNLINK changes the default behavior, so
+    #: unlinked).  Specifying :attr:`Mask.EXCL_UNLINK` changes the default behavior, so
     #: that events are not generated for children after they have been unlinked
     #: from the watched directory.
     EXCL_UNLINK = 0x04000000
@@ -141,7 +141,7 @@ class Mask(IntFlag):
     #: If a watch instance already exists for the filesystem object
     #: corresponding to pathname, add (OR) the events in mask  to  the  watch
     #: mask (instead of replacing the mask); the error EINVAL results if
-    #: IN_MASK_CREATE is also specified.
+    #: :attr:`Mask.MASK_CREATE` is also specified.
     MASK_ADD = 0x20000000
 
     #: Subject of this event is a directory.
@@ -221,8 +221,8 @@ class Event:
         According to the `inotify man page
         <http://man7.org/linux/man-pages/man7/inotify.7.html>`_, cookie is a
         unique integer that connects related events.  Currently, this is used
-        only for rename events, and allows the resulting pair of IN_MOVED_FROM
-        and IN_MOVED_TO events to be connected by the application.  For all
+        only for rename events, and allows the resulting pair of :attr:`Mask.MOVED_FROM`
+        and :attr:`Mask.MOVED_TO` events to be connected by the application.  For all
         other event types, cookie is set to 0.
         
         :returns: the cookie for this event
@@ -388,7 +388,7 @@ class Inotify:
     def rm_watch(self, watch):
         '''Remove a watch from this inotify instance.
 
-        This will generate an IN_IGNORED event that contains the :class:`Watch`
+        This will generate an :attr:`Mask.IGNORED` event that contains the :class:`Watch`
         instance.
 
         :param Watch watch: the :class:`Watch` to remove
@@ -459,7 +459,6 @@ class Inotify:
 
             # If IGNORED or ONESHOT, the event takes ownership of this watch
             if Mask.IGNORED in mask or (watch and Mask.ONESHOT in watch.mask):
-                print('deleting watch')
                 self._watches.pop(event_struct.wd, None)
                 owns_watch = True
 
@@ -491,14 +490,17 @@ class Inotify:
         instance from this :class:`Inotify` object.  A :attr:`Mask.ONESHOT`
         Watch will remove itself on the first event.
 
-        Important note:  :attr:`Mask.MOVE_SELF` will cause the relevant
-        :meth:`Watch.path` to be incorrect.  This library will not
-        automatically update it for you, becuase MOVE_SELF does not tell you
-        the new name.  You would have to watch the parent directory and change
-        the :meth:`Watch.path` value yourself if you want that functionality.
+        .. caution::
 
-        If you don't do this and the watch path is moved, the Events will have
-        correct names but incorrect paths.
+            A watched path being moved will cause the relevant
+            :meth:`Watch.path` to be incorrect.  This library will not
+            automatically update it for you, because :attr:`Mask.MOVE_SELF`
+            does not tell you the new name.  You would have to watch the parent
+            directory and change the :meth:`Watch.path` value yourself if you
+            want that functionality.
+
+            If you don't do this and the watch path is moved, the
+            :class:`Event` will have a correct name but incorrect path.
 
         :returns: a single :class:`Event`
         :rtype: Event

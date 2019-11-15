@@ -79,29 +79,28 @@ This library
 The primary motivation is that this is written to be a Python inotify module
 that I would feel comfortable using.
 
-A note on valid UTF-8
----------------------
+.. caution::
+  A note on file paths and unicode
 
-This package handles the watch paths and event names and paths as
-:class:`pathlib.Path` instances.  These may not be valid utf-8, because Linux
-paths may contain any character except for the null byte, including invalid
-utf-8 sequences.  This library encodes these using python's surrogateescape
-handler, to conform to the way the os package does it.  This means that if you
-have invalid utf-8 in a path, you can still handle it correctly and reference it
-as a file, but if you try to print it or convert it (such as using the
-:meth:`str.encode` method), you will get an error unless you explicitly use
-surrogateescape.
+  This package handles the watch paths and event names and paths as
+  :class:`pathlib.Path` instances.  These may not be valid utf-8, because Linux
+  paths may contain any character except for the null byte, including invalid
+  utf-8 sequences.  This library encodes these using python's surrogateescape
+  handler, to conform to the way the os package does it.  This means that if you
+  have invalid utf-8 in a path, you can still handle it correctly and reference
+  it as a file, but if you try to print it or convert it (such as using the
+  :meth:`str.encode` method), you will get an error unless you explicitly use
+  surrogateescape.
 
-You can read more about the surrogateescape in the `Python os package
-documentation <ospackage>`_ and the `codecs surrogateescape <surrogateescape>`_
-documentation.
+  You can read more about the surrogateescape in the `Python os package
+  documentation <ospackage>`_ and the `codecs surrogateescape
+  <surrogateescape>`_ documentation.
 
 .. toctree::
   :maxdepth: 2
   :caption: Contents:
 
   doc/inotify
-  doc/ffi
   doc/error
 
 Indices and tables
