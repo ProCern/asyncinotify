@@ -4,6 +4,7 @@
 # This code is released under the license described in the LICENSE file
 
 import ctypes
+import os
 
 from .error import InotifyError
 
