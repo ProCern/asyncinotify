@@ -11,6 +11,19 @@ This works without any other external dependencies.  The core of this package is
 :class:`asyncinotify.inotify.Inotify`.  Most important Classes may be imported
 directly from the :mod:`asyncinotify` package.
 
+The code is available on `GitLab <sources>`_ and the documentation is available on
+ReadTheDocs_. The package itself is available on PyPi_.
+
+Installation
+------------
+
+You know the drill::
+
+  pip install asyncinotify
+
+Usage
+-----
+
 .. code-block:: python
 
   from pathlib import Path
@@ -99,3 +112,5 @@ documentation.
 .. _surrogateescape: https://docs.python.org/3/library/codecs.html#surrogateescape
 .. _sources: https://gitlab.com/Taywee/asyncinotify
 .. _pathlib: https://docs.python.org/3/library/pathlib.html
+.. _ReadTheDocs: https://asyncinotify.readthedocs.io/en/latest/
+.. _PyPi: https://pypi.org/project/asyncinotify/

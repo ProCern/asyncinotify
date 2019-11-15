@@ -14,7 +14,6 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('.'))
 
-
 # -- Project information -----------------------------------------------------
 
 project = 'asyncinotify'
@@ -22,7 +21,7 @@ copyright = '2019, Taylor C. Richberger'
 author = 'Taylor C. Richberger'
 
 # The full version, including alpha/beta/rc tags
-release = '0.1.0'
+release = '0.2.0'
 
 
 # -- General configuration ---------------------------------------------------
