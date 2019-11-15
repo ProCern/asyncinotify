@@ -9,7 +9,7 @@ import asyncio
 
 async def main():
     with Inotify() as inotify:
-        inotify.add_watch('/tmp', Mask.ACCESS | Mask.MODIFY | Mask.OPEN | Mask.CREATE | Mask.DELETE | Mask.ATTRIB | Mask.CLOSE | Mask.MOVE | Mask.ONLYDIR)
+        inotify.add_watch('/tmp/delete', Mask.ACCESS | Mask.MODIFY | Mask.OPEN | Mask.CREATE | Mask.DELETE | Mask.ATTRIB | Mask.CLOSE | Mask.MOVE | Mask.ONLYDIR)
         async for event in inotify:
             print(event)
             print(repr(event.path))

@@ -19,9 +19,13 @@ except ImportError:
 from .ffi import libc, inotify_event, inotify_event_size, NAME_MAX
 
 class InitFlags(IntFlag):
-    '''Init flags for use with the :ref:`Inotify` constructor.
+    '''Init flags for use with the :class:`Inotify` constructor.
 
-    You usually won't have a reason to use this.'''
+    You shouldn't have a reason to use this, as CLOEXEC will be desired because
+    there's no reason for exec'd children to inherit inotify handles here, and
+    NONBLOCK shouldn't even make a difference due to the handle always being
+    watched with select.
+    '''
 
     CLOEXEC = 0x80000
     NONBLOCK = 0x800
@@ -60,37 +64,48 @@ class Mask(IntFlag):
     ONESHOT = 0x80000000
 
 class Event:
-    """Event output class"""
+    '''Event output class'''
 
     def __init__(self, watch, mask, cookie, name):
         """Create the class.  This class is internal, for all intents and
         purposes.  Client code should have no reason to construct instances of
         it.
 
-        :watch: A :ref:`Watch` instance, or none
+        :watch: A :class:`Watch` instance, or none
         :mask: The mask that this event was created with
         :cookie: The cookie integer for identifying move operations
         :name: The name path.
         """
-        if watch:
-            self._watch = weakref.ref(watch)
-        else:
-            self._watch = None
 
         self._mask = mask
         self._cookie = cookie
         self._name = name
+
+        if Mask.IGNORED in self.mask:
+            self._watch = watch
+        else:
+            if watch:
+                self._watch = weakref.ref(watch)
+            else:
+                self._watch = None
+
         
     @property
     def watch(self):
         '''The actual Watch instance associated with this event.
         
         This is stored internally as a weak reference.  If the event is taken
-        out of context and outlives its generating :ref:`Inotify`, this may
+        out of context and outlives its generating :class:`Inotify`, this may
         return None.
+
+        If :meth:`mask` contains IGNORED, this is not a weak reference, but the
+        actual watch instance.
         '''
         if self._watch is not None:
-            return self._watch()
+            if Mask.IGNORED in self.mask:
+                return self._watch
+            else:
+                return self._watch()
 
     @property
     def mask(self):
@@ -137,20 +152,40 @@ class Watch:
     :meth:`Inotify.add_watch` to create it.
     '''
     def __init__(self, inotify, path, mask):
+        '''
+        Do not instantiate this directly.  Use :meth:`Inotify.add_watch` instead.
+
+        :param Inotify inotify: The :class:`Inotify` instance this Watch is being added to
+        :param pathlib.Path path: A :class:`pathlib.Path` to the watch destination
+        :param Mask mask: The mask for the added watch.
+        '''
+        self._inotify = weakref.ref(inotify)
         self._mask = mask
         self._path = path
         self._wd = libc.inotify_add_watch(inotify._fd, str(path).encode('utf-8', 'surrogateescape'), mask)
 
     @property
+    def inotify(self):
+        '''The :class:`Inotify` instance this Watch belongs to.
+
+        This is internally stored as a weakref, so if the :class:`Watch`
+        outlives the :class:`Inotify`, this may return None.
+        '''
+        return self._inotify()
+
+    @property
     def wd(self):
+        '''The raw watch descriptor'''
         return self._wd
 
     @property
     def path(self):
+        '''The :class:`pathlib.Path` that this watch is for'''
         return self._path
 
     @property
     def mask(self):
+        '''The :class:`Mask` that was used to construct this watch'''
         return self._mask
 
     def __repr__(self):
@@ -183,8 +218,8 @@ class Inotify:
     def add_watch(self, path, mask):
         '''Add a watch dir.
 
-        :param path: a string, bytes, or PathLike object
-        :param mask: a Mask
+        :param pathlib.Path path: a string, bytes, or PathLike object
+        :param Mask mask: a Mask determining how the watch behaves
 
         :returns: The relevant Watch instance
         '''
@@ -205,6 +240,17 @@ class Inotify:
 
         return watch
 
+    def rm_watch(self, watch):
+        '''Remove a watch from this inotify instance.
+
+        This will generate an IN_IGNORED event that contains the :class:`Watch`
+        instance.
+
+        :param Watch watch: the :class:`Watch` to remove
+        '''
+
+        libc.inotify_rm_watch(self._fd, watch.wd)
+
     def __enter__(self):
         return self
 
@@ -216,6 +262,9 @@ class Inotify:
 
     @property
     def cache_size(self):
+        '''The maximum number of full-sized events (events with a NAME_MAX-length name) to store.
+
+        More events may be stored, because very few events should use a NAME_MAX length name.'''
         return self._cache_size
 
     @cache_size.setter
@@ -242,11 +291,18 @@ class Inotify:
                     if zero_pos > 0:
                         raw_name = raw_name[:zero_pos]
                     name = Path(raw_name.decode('utf-8', 'surrogateescape'))
+            mask = Mask(event_struct.mask)
+
+            # If IGNORED, the event takes ownership of this watch
+            if Mask.IGNORED in mask:
+                watch = self._watches.pop(event_struct.wd, None)
+            else:
+                watch = self._watches.get(event_struct.wd)
 
             event = Event(
                 # wd may be -1
-                watch=self._watches.get(event_struct.wd),
-                mask=Mask(event_struct.mask),
+                watch=watch,
+                mask=mask,
                 cookie=event_struct.cookie,
                 name=name,
             )
