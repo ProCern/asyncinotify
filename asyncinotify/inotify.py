@@ -152,7 +152,10 @@ class Mask(IntFlag):
     ONESHOT = 0x80000000
 
 class Event:
-    '''Event output class'''
+    '''Event output class.
+
+    The :class:`Mask` values may be tested directly against this class.
+    '''
 
     def __init__(self, watch, mask, cookie, name, owns_watch):
         """Create the class.  This class is internal, for all intents and
@@ -263,6 +266,11 @@ class Event:
                 return watch.path / name
             else:
                 return watch.path
+
+    def __contains__(self, value):
+        if isinstance(value, Mask):
+            return value in self.mask
+        raise TypeError("Only Mask is supported with Event's 'in' operator")
 
     def __repr__(self):
         return f'<Event name={self.name!r} mask={self.mask!r} cookie={self.cookie} watch={self.watch!r}>'
