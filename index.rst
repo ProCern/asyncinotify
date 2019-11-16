@@ -56,7 +56,7 @@ don't like, are badly documented, they work with paths in a non-idiomatic way,
 are not asynchronous, or are overengineered compared to the API they are
 wrapping.  I find that the last one is true for the majority of them.
 
-I encourage everybody to read the `sources <GitLab>`_ of this package.  They are
+I encourage everybody to read the `sources <GitLab_>`_ of this package.  They are
 quite simple and easy to understand.
 
 This library
@@ -93,8 +93,8 @@ that I would feel comfortable using.
   surrogateescape.
 
   You can read more about the surrogateescape in the `Python os package
-  documentation <ospackage>`_ and the `codecs surrogateescape
-  <surrogateescape>`_ documentation.
+  documentation <ospackage_>`_ and the `codecs surrogateescape
+  <surrogateescape_>`_ documentation.
 
 .. toctree::
   :maxdepth: 2
