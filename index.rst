@@ -79,22 +79,21 @@ This library
 The primary motivation is that this is written to be a Python inotify module
 that I would feel comfortable using.
 
-.. caution::
-  A note on file paths and unicode
+.. warning::
 
   This package handles the watch paths and event names and paths as
   :class:`pathlib.Path` instances.  These may not be valid utf-8, because Linux
   paths may contain any character except for the null byte, including invalid
-  utf-8 sequences.  This library encodes these using python's surrogateescape
+  utf-8 sequences.  This library encodes these using python's
+  ``surrogateescape``
   handler, to conform to the way the os package does it.  This means that if you
   have invalid utf-8 in a path, you can still handle it correctly and reference
   it as a file, but if you try to print it or convert it (such as using the
   :meth:`str.encode` method), you will get an error unless you explicitly use
-  surrogateescape.
+  ``surrogateescape``.
 
-  You can read more about the surrogateescape in the `Python os package
-  documentation <ospackage_>`_ and the `codecs surrogateescape
-  <surrogateescape_>`_ documentation.
+  You can read more about the ``surrogateescape`` in the `Python os package
+  documentation <ospackage_>`_ and the `codecs error handler <errorhandler_>`_ documentation.
 
 .. toctree::
   :maxdepth: 2
@@ -111,7 +110,7 @@ Indices and tables
 * :ref:`search`
 
 .. _ospackage: https://docs.python.org/3/library/os.html#file-names-command-line-arguments-and-environment-variables
-.. _surrogateescape: https://docs.python.org/3/library/codecs.html#surrogateescape
+.. _errorhandler: https://docs.python.org/3/library/codecs.html#error-handlers
 .. _GitLab: https://gitlab.com/Taywee/asyncinotify
 .. _pathlib: https://docs.python.org/3/library/pathlib.html
 .. _ReadTheDocs: https://asyncinotify.readthedocs.io/en/latest/
