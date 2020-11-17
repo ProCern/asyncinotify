@@ -157,12 +157,12 @@ class Event:
     The :class:`Mask` values may be tested directly against this class.
     '''
 
-    def __init__(self, watch, mask, cookie, name, owns_watch):
+    def __init__(self, watch, mask, cookie, name):
         """Create the class.  This class is internal, for all intents and
         purposes.  Client code should have no reason to construct instances of
         it.
 
-        :watch: A :class:`Watch` instance, or none
+        :watch: A :class:`Watch` instance, a weakref, or None
         :mask: The mask that this event was created with
         :cookie: The cookie integer for identifying move operations
         :name: The name path.
@@ -172,16 +172,7 @@ class Event:
         self._mask = mask
         self._cookie = cookie
         self._name = name
-        self._owns_watch = owns_watch
-
-        if owns_watch:
-            self._watch = watch
-        else:
-            if watch:
-                self._watch = weakref.ref(watch)
-            else:
-                self._watch = None
-
+        self._watch = watch
         
     @property
     def watch(self):
@@ -202,11 +193,11 @@ class Event:
         :returns: the watch instance that generated this
         :rtype: Watch
         '''
-        if self._owns_watch:
+
+        if self._watch is None or isinstance(self._watch, Watch):
             return self._watch
         else:
-            if self._watch is not None:
-                return self._watch()
+            return self._watch()
 
     @property
     def mask(self):
@@ -261,7 +252,7 @@ class Event:
         '''
         watch = self.watch
         name = self.name
-        if watch:
+        if watch is not None:
             if name:
                 return watch.path / name
             else:
@@ -413,6 +404,9 @@ class Inotify:
     def __exit__(self, *args, **kwargs):
         self.close()
 
+    def __del__(self):
+        self.close()
+
     def close(self):
         '''Close the file descriptor for this inotify.
 
@@ -425,7 +419,9 @@ class Inotify:
         This is automatically called when this class is used as a context
         manager.
         '''
-        os.close(self._fd)
+        if self._fd is not None:
+            os.close(self._fd)
+            self._fd = None
 
     @property
     def cache_size(self):
@@ -463,20 +459,20 @@ class Inotify:
             mask = Mask(event_struct.mask)
 
             watch = self._watches.get(event_struct.wd, None)
-            owns_watch = False
 
-            # If IGNORED or ONESHOT, the event takes ownership of this watch
-            if Mask.IGNORED in mask or (watch and Mask.ONESHOT in watch.mask):
-                self._watches.pop(event_struct.wd, None)
-                owns_watch = True
+            if watch is not None:
+                if Mask.IGNORED in mask or Mask.ONESHOT in watch.mask:
+                    # If IGNORED or ONESHOT, the event takes ownership of this watch
+                    del self._watches[event_struct.wd]
+                elif watch is not None:
+                    # Otherwise, Initify retains ownership and a weak reference is created
+                    watch = weakref.ref(watch)
 
             event = Event(
-                # wd may be -1
                 watch=watch,
                 mask=mask,
                 cookie=event_struct.cookie,
                 name=name,
-                owns_watch=owns_watch,
             )
             events.append(event)
 
