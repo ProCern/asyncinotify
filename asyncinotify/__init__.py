@@ -21,6 +21,7 @@ except ImportError:
 class InotifyError(RuntimeError):
     '''Simple inotify error type, thrown for all errors in inotify ffi calls'''
 
+
 # Suppress things that might break documentation generation
 if os.environ.get('ASYNCINOTIFY_DO_NOT_IMPORT') != 'TRUE':
     from ._ffi import libc, inotify_event, inotify_event_size, NAME_MAX
