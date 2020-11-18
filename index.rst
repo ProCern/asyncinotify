@@ -46,6 +46,9 @@ important Classes may be imported directly from the :mod:`asyncinotify` package.
 This will asynchronously watch the /tmp directory and report events it
 encounters.
 
+This library also supports synchronous operation, using the
+:meth:`asyncinotify.inotify.Inotify.sync_get`` method, or simply using
+synchronous iteration.
 
 Motivation
 ----------
@@ -99,8 +102,7 @@ that I would feel comfortable using.
   :maxdepth: 2
   :caption: Contents:
 
-  doc/inotify
-  doc/error
+  doc/asyncinotify
 
 Indices and tables
 ==================

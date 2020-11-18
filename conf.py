@@ -22,7 +22,7 @@ from asyncinotify import _meta
 
 project = _meta.data['name']
 author = _meta.data['author']
-copyright = '2019, ' + author
+copyright = '2019-2020, ' + author
 
 # The full version, including alpha/beta/rc tags
 release = _meta.data['version']
