@@ -373,13 +373,20 @@ class Inotify:
                  flags: InitFlags = InitFlags.CLOEXEC | InitFlags.NONBLOCK,
                  cache_size: int = 10) -> None:
         self.cache_size = cache_size
-        self._fd = libc.inotify_init()
+        self._fd: Optional[int] = libc.inotify_init1(flags)
 
         # Watches dict used for matching events up with the watch descriptor,
         # in order to get the full item path.
         self._watches: Dict[int, Watch] = {}
 
         self._events: List[Event] = []
+
+    @property
+    def fd(self) -> int:
+        if self._fd is None:
+            raise RuntimeError('Can not work with closed inotify')
+        else:
+            return self._fd
 
     def add_watch(self, path: Union[os.PathLike, bytes, str], mask: Mask) -> Watch:
         '''Add a watch dir.
@@ -390,13 +397,15 @@ class Inotify:
         :returns: The relevant Watch instance
         '''
 
+        # Convert bytes to Path
         if isinstance(path, bytes):
-            path = path.decode('utf-8', 'surrogateescape')
+            path = Path(path.decode('utf-8', 'surrogateescape'))
 
-        if not isinstance(path, os.PathLike):
+        # Convert non-Path to Path
+        if not isinstance(path, Path):
             path = Path(path)
 
-        wd = libc.inotify_add_watch(self._fd, str(path).encode('utf-8', 'surrogateescape'), mask)
+        wd = libc.inotify_add_watch(self.fd, path.__fspath__(), mask)
 
         # Happens for things like an existing watch instance being modified,
         # like MASK_ADD
@@ -422,7 +431,7 @@ class Inotify:
         :param Watch watch: the :class:`Watch` to remove
         '''
 
-        libc.inotify_rm_watch(self._fd, watch.wd)
+        libc.inotify_rm_watch(self.fd, watch.wd)
 
         # This does not remove from self._watches because the IGNORE event will
         # do that for you.
@@ -466,7 +475,7 @@ class Inotify:
     def _get(self, future: Union[Future, _FakeFuture]) -> None:
         '''Retrieve an array of events into an array, which is set on the passed-in future.'''
 
-        buffer = BytesIO(os.read(self._fd, (inotify_event_size + NAME_MAX + 1) * self._cache_size))
+        buffer = BytesIO(os.read(self.fd, (inotify_event_size + NAME_MAX + 1) * self._cache_size))
         events = []
         while True:
             event_buffer = buffer.read(inotify_event_size)
@@ -539,9 +548,9 @@ class Inotify:
         if not self._events:
             event_loop = get_running_loop()
             future = event_loop.create_future()
-            event_loop.add_reader(self._fd, self._get, future)
+            event_loop.add_reader(self.fd, self._get, future)
             self._events = await future
-            event_loop.remove_reader(self._fd)
+            event_loop.remove_reader(self.fd)
         return self._events.pop(0)
 
     def sync_get(self) -> Event:

@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-# Copyright © 2019 Taylor C. Richberger
+# Copyright © 2019-2021 Taylor C. Richberger
 # This code is released under the license described in the LICENSE file
 
 data = dict(
     name='asyncinotify',
-    version='2.0.0',
+    version='2.0.1',
     author='Taylor C. Richberger',
     description='A simple optionally-async python inotify library, focused on simplicity of use and operation, and leveraging modern Python features',
     license='MIT',
