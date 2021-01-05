@@ -399,13 +399,15 @@ class Inotify:
 
         # Convert bytes to Path
         if isinstance(path, bytes):
+            bytepath = path
             path = Path(path.decode('utf-8', 'surrogateescape'))
+        else:
+            # Convert non-Path to Path
+            if not isinstance(path, Path):
+                path = Path(path)
+            bytepath = path.__fspath__().encode('utf-8', 'surrogateescape')
 
-        # Convert non-Path to Path
-        if not isinstance(path, Path):
-            path = Path(path)
-
-        wd = libc.inotify_add_watch(self.fd, path.__fspath__(), mask)
+        wd = libc.inotify_add_watch(self.fd, bytepath, mask)
 
         # Happens for things like an existing watch instance being modified,
         # like MASK_ADD
