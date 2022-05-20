@@ -551,8 +551,10 @@ class Inotify:
             event_loop = get_running_loop()
             future = event_loop.create_future()
             event_loop.add_reader(self.fd, self._get, future)
-            self._events = await future
-            event_loop.remove_reader(self.fd)
+            try:
+                self._events = await future
+            finally:
+                event_loop.remove_reader(self.fd)
         return self._events.pop(0)
 
     def sync_get(self) -> Event:
