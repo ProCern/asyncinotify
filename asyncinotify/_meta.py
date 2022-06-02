@@ -4,7 +4,7 @@
 
 data = dict(
     name='asyncinotify',
-    version='2.0.2',
+    version='2.0.4',
     author='Taylor C. Richberger',
     description='A simple optionally-async python inotify library, focused on simplicity of use and operation, and leveraging modern Python features',
     license='MIT',
@@ -13,6 +13,10 @@ data = dict(
     packages=[
         'asyncinotify',
     ],
+    package_data={
+        "asyncinotify": ["py.typed"],
+    },
+    zip_safe=False,
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Programming Language :: Python :: 3',
