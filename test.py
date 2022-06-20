@@ -8,9 +8,9 @@ import sys
 
 import unittest
 from pathlib import Path
-sys.path.insert(0, Path(__file__).resolve().parent)
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 from tempfile import TemporaryDirectory
-from asyncinotify import Inotify, Mask, InotifyError
+from asyncinotify import Event, Inotify, Mask, InotifyError
 import asyncio
 
 class TestInotify(unittest.TestCase):
@@ -25,18 +25,16 @@ class TestInotify(unittest.TestCase):
                 if Mask.IGNORED in event and event.watch is self.watch:
                     return events
 
-    def gather_events(self, function):
+    def gather_events(self, function) -> list[Event]:
         '''Run the function "soon" in the event loop, and also watch events
         until you can return the result.'''
-        loop = asyncio.get_event_loop()
-        def wrapper():
-            try:
-                function()
-            finally:
-                self.inotify.rm_watch(self.watch)
 
-        loop.call_soon(wrapper)
-        return loop.run_until_complete(self.watch_events())
+        try:
+            function()
+        finally:
+            self.inotify.rm_watch(self.watch)
+
+        return asyncio.run(self.watch_events())
 
     def setUp(self):
         self._dir = TemporaryDirectory()
