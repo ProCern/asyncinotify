@@ -350,6 +350,9 @@ class _FakeFuture:
     def set_result(self, value: List[Event]) -> None:
         self._result = value
 
+    def cancelled(self) -> bool:
+        return False
+
     @property
     def result(self) -> List[Event]:
         return self._result
@@ -516,7 +519,8 @@ class Inotify:
             )
             events.append(event)
 
-        future.set_result(events)
+        if not future.cancelled():
+            future.set_result(events)
 
     async def get(self) -> Event:
         '''Get a single next event.
