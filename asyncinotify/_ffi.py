@@ -31,10 +31,9 @@ def check_return(value: ctypes.c_int) -> ctypes.c_int:
 inotify_event_size = ctypes.sizeof(inotify_event)
 NAME_MAX = 255
 
+# May be None, which will work fine anyway if the program is linked dynamically
+# against an appropriate libc.
 _libcname = ctypes.util.find_library('c')
-if _libcname is None:
-    _libcname = 'libc.so.6'
-
 libc = ctypes.CDLL(_libcname, use_errno=True)
 
 libc.inotify_init.restype = check_return
