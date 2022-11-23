@@ -4,6 +4,7 @@
 # This code is released under the license described in the LICENSE file
 
 import ctypes
+import ctypes.util
 import os
 
 from . import InotifyError
@@ -29,7 +30,13 @@ def check_return(value: ctypes.c_int) -> ctypes.c_int:
 
 inotify_event_size = ctypes.sizeof(inotify_event)
 NAME_MAX = 255
-libc = ctypes.CDLL("libc.so.6", use_errno=True)
+
+_libcname = ctypes.util.find_library('c')
+if _libcname is None:
+    _libcname = 'libc.so.6'
+
+libc = ctypes.CDLL(_libcname, use_errno=True)
+
 libc.inotify_init.restype = check_return
 libc.inotify_init.argtypes = ()
 libc.inotify_init1.restype = check_return
