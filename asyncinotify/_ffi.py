@@ -7,9 +7,6 @@ import ctypes
 import ctypes.util
 import os
 
-from . import InotifyError
-
-
 class inotify_event(ctypes.Structure):
     '''FFI struct for reading inotify events.  Should not be accessed externally.'''
     _fields_ = [
@@ -24,7 +21,8 @@ class inotify_event(ctypes.Structure):
 def check_return(value: ctypes.c_int) -> ctypes.c_int:
     if value == -1:
         errno = ctypes.get_errno()
-        raise InotifyError(f'Call failed, errno {errno}: {os.strerror(errno)}')
+        raise OSError(errno, os.strerror(errno))
+
     return value
 
 

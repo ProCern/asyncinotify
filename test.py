@@ -10,7 +10,7 @@ import unittest
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from tempfile import TemporaryDirectory
-from asyncinotify import Event, Inotify, Mask, InotifyError
+from asyncinotify import Event, Inotify, Mask
 import asyncio
 
 class TestInotify(unittest.TestCase):
@@ -127,14 +127,14 @@ class TestInotify(unittest.TestCase):
         # Will not raise error
         self.inotify.add_watch(self.dir / 'foo', Mask.ATTRIB)
 
-        with self.assertRaises(InotifyError):
+        with self.assertRaises(OSError):
             self.inotify.add_watch(self.dir / 'foo', Mask.ATTRIB | Mask.ONLYDIR)
 
     def test_nonexist_error(self):
-        with self.assertRaises(InotifyError):
+        with self.assertRaises(OSError):
             self.inotify.add_watch(self.dir / 'foo', Mask.ATTRIB | Mask.ONLYDIR)
 
-        with self.assertRaises(InotifyError):
+        with self.assertRaises(OSError):
             self.inotify.add_watch(self.dir / 'foo', Mask.ATTRIB)
 
     def test_move_self(self):
@@ -297,14 +297,14 @@ class TestSyncInotify(unittest.TestCase):
         # Will not raise error
         self.inotify.add_watch(self.dir / 'foo', Mask.ATTRIB)
 
-        with self.assertRaises(InotifyError):
+        with self.assertRaises(OSError):
             self.inotify.add_watch(self.dir / 'foo', Mask.ATTRIB | Mask.ONLYDIR)
 
     def test_nonexist_error(self):
-        with self.assertRaises(InotifyError):
+        with self.assertRaises(OSError):
             self.inotify.add_watch(self.dir / 'foo', Mask.ATTRIB | Mask.ONLYDIR)
 
-        with self.assertRaises(InotifyError):
+        with self.assertRaises(OSError):
             self.inotify.add_watch(self.dir / 'foo', Mask.ATTRIB)
 
     def test_move_self(self):
