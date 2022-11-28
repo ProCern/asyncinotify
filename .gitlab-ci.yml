@@ -4,6 +4,11 @@ image: python:latest
 # only cache local items.
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  
+stages:
+  - test
+  - package
+  - deploy
 
 # Pip's cache doesn't store the python packages
 # https://pip.pypa.io/en/stable/topics/caching/
@@ -21,10 +26,12 @@ before_script:
   - . venv/bin/activate
 
 test:
+  stage: test
   script:
     - PYTHONPATH="$CI_PROJECT_DIR" python test.py
 
-run:
+package:
+  stage: package
   script:
     - pip install wheel
     - python setup.py bdist_wheel
@@ -33,6 +40,16 @@ run:
     paths:
       - dist/*.whl
       - dist/*.tar.gz
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v[0-9]/
 
 deploy:
-  script: echo "Define your deployment script!"
+  stage: deploy
+  script:
+    - pip install twine
+    - echo '[pypi]' >"$HOME/.pypirc"
+    - echo 'username = __token__' >>"$HOME/.pypirc"
+    - echo "password = $PYPI_TOKEN" >>"$HOME/.pypirc"
+    - twine upload dist/*.whl dist/*.tar.gz
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v[0-9]/
