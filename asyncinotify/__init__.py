@@ -18,10 +18,6 @@ except ImportError:
     from asyncio import get_event_loop as get_running_loop
 
 
-class InotifyError(RuntimeError):
-    '''Simple inotify error type, thrown for all errors in inotify ffi calls'''
-
-
 # Suppress things that might break documentation generation
 if os.environ.get('ASYNCINOTIFY_DO_NOT_IMPORT') != 'TRUE':
     from ._ffi import libc, inotify_event, inotify_event_size, NAME_MAX
@@ -387,7 +383,7 @@ class Inotify:
     @property
     def fd(self) -> int:
         if self._fd is None:
-            raise RuntimeError('Can not work with closed inotify')
+            raise ValueError('Can not work with closed inotify')
         else:
             return self._fd
 
@@ -410,7 +406,11 @@ class Inotify:
                 path = Path(path)
             bytepath = path.__fspath__().encode('utf-8', 'surrogateescape')
 
-        wd = libc.inotify_add_watch(self.fd, bytepath, mask)
+        try:
+            wd = libc.inotify_add_watch(self.fd, bytepath, mask)
+        except OSError as e:
+            e.filename = path
+            raise e
 
         # Happens for things like an existing watch instance being modified,
         # like MASK_ADD
