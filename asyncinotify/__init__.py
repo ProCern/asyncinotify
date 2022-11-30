@@ -399,12 +399,12 @@ class Inotify:
         # Convert bytes to Path
         if isinstance(path, bytes):
             bytepath = path
-            path = Path(path.decode('utf-8', 'surrogateescape'))
+            path = Path(os.fsdecode(bytepath))
         else:
             # Convert non-Path to Path
             if not isinstance(path, Path):
                 path = Path(path)
-            bytepath = path.__fspath__().encode('utf-8', 'surrogateescape')
+            bytepath = bytes(path)
 
         try:
             wd = libc.inotify_add_watch(self.fd, bytepath, mask)
@@ -498,7 +498,7 @@ class Inotify:
                     # If zero_pos is -1, we want the whole name string, otherwise truncate the zeros
                     if zero_pos > 0:
                         raw_name = raw_name[:zero_pos]
-                    name = Path(raw_name.decode('utf-8', 'surrogateescape'))
+                    name = Path(os.fsdecode(raw_name))
             mask = Mask(event_struct.mask)
 
             watch: Optional[Union[Watch, ReferenceType]] = self._watches.get(event_struct.wd, None)
