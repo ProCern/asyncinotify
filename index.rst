@@ -85,18 +85,14 @@ that I would feel comfortable using.
 .. warning::
 
   This package handles the watch paths and event names and paths as
-  :class:`pathlib.Path` instances.  These may not be valid utf-8, because Linux
+  :class:`pathlib.Path` instances.  These might not be valid utf-8, because Linux
   paths may contain any character except for the null byte, including invalid
-  utf-8 sequences.  This library encodes these using python's
-  ``surrogateescape``
-  handler, to conform to the way the os package does it.  This means that if you
-  have invalid utf-8 in a path, you can still handle it correctly and reference
-  it as a file, but if you try to print it or convert it (such as using the
-  :meth:`str.encode` method), you will get an error unless you explicitly use
-  ``surrogateescape``.
+  utf-8 sequences.  This library uses ``os.fsencode`` and ``os.fsdecode`` on
+  paths to obtain paths the same way that Python natively does.
 
-  You can read more about the ``surrogateescape`` in the `Python os package
-  documentation <ospackage_>`_ and the `codecs error handler <errorhandler_>`_ documentation.
+  You can read more about Python's path handling in the `filesystem encoding and error handler <https://docs.python.org/3/glossary.html#term-filesystem-encoding-and-error-handler>`_ section of the glossary.
+  This section links to the relevant places, and you can use some of this to figure out how to handle non-UTF-8 sequences on a UTF-8 system.
+
 
 .. toctree::
   :maxdepth: 2
