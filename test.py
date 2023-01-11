@@ -17,6 +17,19 @@ else:
     from typing import Sequence
 
 import asyncio
+try:
+    from asyncio import run
+except ImportError:
+    def run(main):
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            try:
+                return loop.run_until_complete(main)
+            finally:
+                loop.run_until_complete(loop.shutdown_asyncgens())
+        finally:
+            loop.close()
 
 class TestInotify(unittest.TestCase):
 
@@ -41,7 +54,7 @@ class TestInotify(unittest.TestCase):
         finally:
             self.inotify.rm_watch(self.watch)
 
-        return asyncio.run(self.watch_events())
+        return run(self.watch_events())
 
     def setUp(self):
         self._dir = TemporaryDirectory()
