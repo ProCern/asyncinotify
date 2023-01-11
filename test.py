@@ -8,10 +8,14 @@ import sys
 
 import unittest
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parent))
 from tempfile import TemporaryDirectory
 from asyncinotify import Event, Inotify, Mask
-from collections.abc import Sequence
+
+if sys.version_info[1] > 8:
+    from collections.abc import Sequence
+else:
+    from typing import Sequence
+
 import asyncio
 
 class TestInotify(unittest.TestCase):
