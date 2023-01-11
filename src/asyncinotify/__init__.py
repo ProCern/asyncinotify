@@ -189,14 +189,14 @@ class Watch:
     @property
     def wd(self) -> int:
         '''
-        :returns: the raw watch descriptor
+        The raw watch descriptor.
         '''
         return self._wd
 
     @property
     def path(self) -> Path:
         '''
-        :returns: The path that this watch is for
+        The path that this watch is for.
         '''
         return self._path
 
@@ -385,6 +385,11 @@ class Inotify:
 
     @property
     def sync_timeout(self) -> Optional[float]:
+        '''The timeout for :meth:`sync_get` and synchronous iteration.
+        
+        Set this to None to disable and -1 to wait forever.  These options can
+        be different depending on the blocking flags selected.
+        '''
         return self._sync_timeout
 
     @sync_timeout.setter
@@ -400,6 +405,8 @@ class Inotify:
 
     @property
     def fd(self) -> int:
+        '''Get the raw file descriptor.
+        '''
         if self._fd is None:
             raise ValueError('Can not work with closed inotify')
         else:
