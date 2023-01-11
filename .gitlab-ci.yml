@@ -6,8 +6,8 @@ variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
   
 stages:
-  - test
   - package
+  - test
   - deploy
 
 # Pip's cache doesn't store the python packages
@@ -25,32 +25,6 @@ before_script:
   - python -mvenv venv
   - . venv/bin/activate
 
-'test_3.7':
-  stage: test
-  image: python:3.7
-  script:
-    - PYTHONPATH="$CI_PROJECT_DIR/src" python test.py
-'test_3.8':
-  stage: test
-  image: python:3.8
-  script:
-    - PYTHONPATH="$CI_PROJECT_DIR/src" python test.py
-'test_3.9':
-  stage: test
-  image: python:3.9
-  script:
-    - PYTHONPATH="$CI_PROJECT_DIR/src" python test.py
-'test_3.10':
-  stage: test
-  image: python:3.10
-  script:
-    - PYTHONPATH="$CI_PROJECT_DIR/src" python test.py
-'test_3.11':
-  stage: test
-  image: python:3.11
-  script:
-    - PYTHONPATH="$CI_PROJECT_DIR/src" python test.py
-
 package:
   stage: package
   script:
@@ -62,6 +36,37 @@ package:
       - dist/*.tar.gz
   rules:
     - if: $CI_COMMIT_TAG =~ /^v[0-9]/
+
+'test_3.7':
+  stage: test
+  image: python:3.7
+  script:
+    - pip install ./dist/*.whl
+    - python test.py
+'test_3.8':
+  stage: test
+  image: python:3.8
+  script:
+    - pip install ./dist/*.whl
+    - python test.py
+'test_3.9':
+  stage: test
+  image: python:3.9
+  script:
+    - pip install ./dist/*.whl
+    - python test.py
+'test_3.10':
+  stage: test
+  image: python:3.10
+  script:
+    - pip install ./dist/*.whl
+    - python test.py
+'test_3.11':
+  stage: test
+  image: python:3.11
+  script:
+    - pip install ./dist/*.whl
+    - python test.py
 
 deploy:
   stage: deploy
