@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright © 2019 Taylor C. Richberger
+# Copyright © 2019-2023 Taylor C. Richberger
 # This code is released under the license described in the LICENSE file
 
 from enum import IntFlag
@@ -10,6 +10,7 @@ import os
 import weakref
 from weakref import ReferenceType
 from asyncio import Future
+import select
 
 # Python 3.7 suggests get_running_loop for library code
 try:
@@ -362,11 +363,15 @@ class Inotify:
     :param int cache_size: The max number of full-size events to cache.  The
         actual number may be higher, because most events will not be
         full-sized.
+
+    :param sync_timeout: If this is not None, then sync_get will wait on an
+        epoll call for that long, and return None on a timeout.  Normal
+        iteration will also exit on a timeout.
     '''
 
     def __init__(self,
                  flags: InitFlags = InitFlags.CLOEXEC | InitFlags.NONBLOCK,
-                 cache_size: int = 10) -> None:
+                 cache_size: int = 10, sync_timeout: Optional[float] = None) -> None:
         self.cache_size = cache_size
         self._fd: Optional[int] = _ffi.libc.inotify_init1(flags)
 
@@ -375,6 +380,23 @@ class Inotify:
         self._watches: Dict[int, Watch] = {}
 
         self._events: List[Event] = []
+        self._epoll = None
+        self.sync_timeout = sync_timeout
+
+    @property
+    def sync_timeout(self) -> Optional[float]:
+        return self._sync_timeout
+
+    @sync_timeout.setter
+    def sync_timeout(self, value: Optional[float]) -> None:
+        self._sync_timeout = value
+        if value is None and self._epoll is not None:
+            self._epoll.close()
+            self._epoll = None
+        elif value is not None and self._epoll is None:
+            self._epoll = select.epoll()
+            self._epoll.register(self.fd, select.EPOLLIN)
+
 
     @property
     def fd(self) -> int:
@@ -458,6 +480,7 @@ class Inotify:
         This is automatically called when this class is used as a context
         manager.
         '''
+        self.sync_timeout = None
         if self._fd is not None:
             os.close(self._fd)
             self._fd = None
@@ -557,15 +580,19 @@ class Inotify:
                 event_loop.remove_reader(self.fd)
         return self._events.pop(0)
 
-    def sync_get(self) -> Event:
+    def sync_get(self) -> Optional[Event]:
         '''Get a single next event synchronously, or throw a blocking error if
         you've opened this in nonblocking mode.
 
         All concerns that apply to :meth:`get` also apply to this method.
 
-        :returns: a single :class:`Event`
+        :returns: a single :class:`Event`, or None if sync_timeout is not None and the poll timed out.
         '''
         if not self._events:
+            if self.sync_timeout is not None:
+                assert self._epoll is not None
+                if not self._epoll.poll(self.sync_timeout, 1):
+                    return None
             future = _FakeFuture()
             self._get(future)
             self._events = future.result
@@ -582,5 +609,11 @@ class Inotify:
         return await self.get()
 
     def __next__(self) -> Event:
-        '''Iterate inotify events forever with :meth:`sync_get`.'''
-        return self.sync_get()
+        '''Iterate inotify events with :meth:`sync_get`.
+
+        If sync_timeout is None or -1, this will iterate forever, otherwise it iterates until a timeout is reached.
+        '''
+        event = self.sync_get()
+        if event is None:
+            raise StopIteration
+        return event

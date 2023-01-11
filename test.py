@@ -361,5 +361,14 @@ class TestSyncInotify(unittest.TestCase):
         self.assertFalse(any(Mask.DELETE in event and event.name is None for event in events))
         # There may or may not be an IGNORED for the watch as well
 
+    def test_timeout(self):
+        with self.inotify as inotify:
+            inotify.sync_timeout = 0.1
+            list(self.dir.iterdir())
+            self.assertTrue(inotify.sync_get())
+            for event in inotify:
+                pass
+            self.assertFalse(inotify.sync_get())
+
 if __name__ == '__main__':
     unittest.main()
