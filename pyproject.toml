@@ -1,7 +1,7 @@
 [project]
 name = 'asyncinotify'
 description = 'A simple optionally-async python inotify library, focused on simplicity of use and operation, and leveraging modern Python features'
-version = '3.0.2'
+version = '3.0.3'
 readme = 'README.rst'
 requires-python = '>= 3.7, < 4'
 license = {text = 'MIT'}
@@ -20,7 +20,7 @@ classifiers=[
     'Topic :: Software Development :: Libraries :: Python Modules',
     'Intended Audience :: Developers',
     'Framework :: AsyncIO',
-],
+]
 
 [[project.authors]]
 name = "Taylor C. Richberger"

@@ -1,5 +1,0 @@
-asyncinotify
-============
-
-.. automodule:: asyncinotify
-  :members:

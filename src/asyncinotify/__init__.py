@@ -17,11 +17,7 @@ try:
 except ImportError:
     from asyncio import get_event_loop as get_running_loop
 
-
-# Suppress things that might break documentation generation
-if os.environ.get('ASYNCINOTIFY_DO_NOT_IMPORT') != 'TRUE':
-    from ._ffi import libc, inotify_event, inotify_event_size, NAME_MAX
-
+from . import _ffi
 
 class InitFlags(IntFlag):
     '''Init flags for use with the :class:`Inotify` constructor.
@@ -372,7 +368,7 @@ class Inotify:
                  flags: InitFlags = InitFlags.CLOEXEC | InitFlags.NONBLOCK,
                  cache_size: int = 10) -> None:
         self.cache_size = cache_size
-        self._fd: Optional[int] = libc.inotify_init1(flags)
+        self._fd: Optional[int] = _ffi.libc.inotify_init1(flags)
 
         # Watches dict used for matching events up with the watch descriptor,
         # in order to get the full item path.
@@ -407,7 +403,7 @@ class Inotify:
             bytepath = bytes(path)
 
         try:
-            wd = libc.inotify_add_watch(self.fd, bytepath, mask)
+            wd = _ffi.libc.inotify_add_watch(self.fd, bytepath, mask)
         except OSError as e:
             e.filename = path
             raise e
@@ -436,7 +432,7 @@ class Inotify:
         :param Watch watch: the :class:`Watch` to remove
         '''
 
-        libc.inotify_rm_watch(self.fd, watch.wd)
+        _ffi.libc.inotify_rm_watch(self.fd, watch.wd)
 
         # This does not remove from self._watches because the IGNORE event will
         # do that for you.
@@ -480,13 +476,13 @@ class Inotify:
     def _get(self, future: Union[Future, _FakeFuture]) -> None:
         '''Retrieve an array of events into an array, which is set on the passed-in future.'''
 
-        buffer = BytesIO(os.read(self.fd, (inotify_event_size + NAME_MAX + 1) * self._cache_size))
+        buffer = BytesIO(os.read(self.fd, (_ffi.inotify_event_size + _ffi.NAME_MAX + 1) * self._cache_size))
         events = []
         while True:
-            event_buffer = buffer.read(inotify_event_size)
+            event_buffer = buffer.read(_ffi.inotify_event_size)
             if not event_buffer:
                 break
-            event_struct = inotify_event.from_buffer_copy(event_buffer)
+            event_struct = _ffi.inotify_event.from_buffer_copy(event_buffer)
             length = event_struct.len
             name = None
 
