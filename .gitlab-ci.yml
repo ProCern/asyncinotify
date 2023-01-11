@@ -25,17 +25,37 @@ before_script:
   - python -mvenv venv
   - . venv/bin/activate
 
-test:
+'test_3.7':
   stage: test
+  image: python:3.7
   script:
-    - PYTHONPATH="$CI_PROJECT_DIR" python test.py
+    - PYTHONPATH="$CI_PROJECT_DIR/src" python test.py
+'test_3.8':
+  stage: test
+  image: python:3.8
+  script:
+    - PYTHONPATH="$CI_PROJECT_DIR/src" python test.py
+'test_3.9':
+  stage: test
+  image: python:3.9
+  script:
+    - PYTHONPATH="$CI_PROJECT_DIR/src" python test.py
+'test_3.10':
+  stage: test
+  image: python:3.10
+  script:
+    - PYTHONPATH="$CI_PROJECT_DIR/src" python test.py
+'test_3.11':
+  stage: test
+  image: python:3.11
+  script:
+    - PYTHONPATH="$CI_PROJECT_DIR/src" python test.py
 
 package:
   stage: package
   script:
-    - pip install wheel
-    - python setup.py bdist_wheel
-    - python setup.py sdist
+    - pip install wheel 'flit >=3.2, <4' build
+    - python -mbuild
   artifacts:
     paths:
       - dist/*.whl

@@ -1,0 +1,35 @@
+[project]
+name = 'asyncinotify'
+description = 'A simple optionally-async python inotify library, focused on simplicity of use and operation, and leveraging modern Python features'
+version = '3.0.2'
+readme = 'README.rst'
+requires-python = '>= 3.7, < 4'
+license = {text = 'MIT'}
+keywords = [
+    'async',
+    'inotify',
+]
+
+classifiers=[
+    'Development Status :: 6 - Mature',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.7',
+    'Operating System :: POSIX :: Linux',
+    'License :: OSI Approved :: MIT License',
+    'Topic :: Software Development :: Libraries',
+    'Topic :: Software Development :: Libraries :: Python Modules',
+    'Intended Audience :: Developers',
+    'Framework :: AsyncIO',
+],
+
+[[project.authors]]
+name = "Taylor C. Richberger"
+email = "tcr@absolute-performance.com"
+
+[project.urls]
+repository  = 'https://gitlab.com/Taywee/asyncinotify/'
+documentation = 'https://asyncinotify.readthedocs.io/'
+
+[build-system]
+build-backend = "flit_core.buildapi"
+requires = ["flit_core >=3.2,<4", 'wheel']

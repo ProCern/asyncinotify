@@ -11,11 +11,12 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from tempfile import TemporaryDirectory
 from asyncinotify import Event, Inotify, Mask
+from collections.abc import Sequence
 import asyncio
 
 class TestInotify(unittest.TestCase):
 
-    async def watch_events(self):
+    async def watch_events(self) -> Sequence[Event]:
         '''Watch events until an IGNORED is received for the main watch, then
         return the events.'''
         events = []
@@ -25,7 +26,9 @@ class TestInotify(unittest.TestCase):
                 if Mask.IGNORED in event and event.watch is self.watch:
                     return events
 
-    def gather_events(self, function) -> list[Event]:
+        raise RuntimeError()
+
+    def gather_events(self, function) -> Sequence[Event]:
         '''Run the function "soon" in the event loop, and also watch events
         until you can return the result.'''
 
@@ -185,7 +188,7 @@ class TestInotify(unittest.TestCase):
 
 class TestSyncInotify(unittest.TestCase):
 
-    def watch_events(self):
+    def watch_events(self) -> Sequence[Event]:
         '''Watch events until an IGNORED is received for the main watch, then
         return the events.'''
         events = []
@@ -194,8 +197,9 @@ class TestSyncInotify(unittest.TestCase):
                 events.append(event)
                 if Mask.IGNORED in event and event.watch is self.watch:
                     return events
+        raise RuntimeError()
 
-    def gather_events(self, function):
+    def gather_events(self, function) -> Sequence[Event]:
         '''Run the function and then watch events until you can return the
         result.'''
 
