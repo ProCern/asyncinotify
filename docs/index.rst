@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-.. include:: README.rst
+.. include:: ../README.rst
 
 Usage
 -----
@@ -98,7 +98,7 @@ that I would feel comfortable using.
   :maxdepth: 2
   :caption: Contents:
 
-  doc/asyncinotify
+  asyncinotify
 
 Indices and tables
 ==================
