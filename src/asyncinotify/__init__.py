@@ -29,6 +29,8 @@ class InitFlags(IntFlag):
     handle always being watched with select, unless you are using synchronous mode.
     '''
 
+    __slots__ = ()
+
     #: Set the close-on-exec (FD_CLOEXEC) flag on the new file descriptor.  See
     #: the description of the O_CLOEXEC flag in  open(2)  for  reasons why this
     #: may be useful.
@@ -47,6 +49,8 @@ class Mask(IntFlag):
     using the bitwise or operator to combine, or using the `in` operator to
     check contents.
     '''
+
+    __slots__ = ()
 
     #: File was accessed (e.g., read(2), execve(2)).
     ACCESS = 0x00000001
@@ -162,6 +166,8 @@ class Watch:
     :meth:`Inotify.add_watch` to create it.
     '''
 
+    __slots__ = ('_inotify', '_mask', '_path', '_wd')
+
     def __init__(self, inotify: 'Inotify', path: Path, mask: Mask, wd: int) -> None:
         '''
         Do not instantiate this directly.  Use :meth:`Inotify.add_watch` instead.
@@ -220,6 +226,8 @@ class Event:
 
     The :class:`Mask` values may be tested directly against this class.
     '''
+
+    __slots__ = ('_mask', '_cookie', '_name', '_watch')
 
     def __init__(self,
                  watch: Optional[Union[Watch, ReferenceType]],
@@ -337,6 +345,8 @@ class Event:
 class _FakeFuture:
     '''A fake future, used to support synchronous operation.'''
 
+    __slots__ = ('_result',)
+
     def __init__(self) -> None:
         self._result: List[Event] = []
 
@@ -368,6 +378,8 @@ class Inotify:
         epoll call for that long, and return None on a timeout.  Normal
         iteration will also exit on a timeout.
     '''
+
+    __slots__ = ('_fd', '_watches', '_events', '_epoll', '_sync_timeout', '_cache_size')
 
     def __init__(self,
                  flags: InitFlags = InitFlags.CLOEXEC | InitFlags.NONBLOCK,
