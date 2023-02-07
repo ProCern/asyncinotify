@@ -20,7 +20,7 @@ import asyncio
 try:
     from asyncio import run
 except ImportError:
-    def run(main):
+    def run(main): # type: ignore
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:

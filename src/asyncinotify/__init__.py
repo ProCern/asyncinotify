@@ -392,7 +392,7 @@ class Inotify:
         self._watches: Dict[int, Watch] = {}
 
         self._events: List[Event] = []
-        self._epoll = None
+        self._epoll: Optional[select.epoll] = None
         self.sync_timeout = sync_timeout
 
     @property

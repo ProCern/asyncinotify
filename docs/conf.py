@@ -21,7 +21,7 @@ sys.path.insert(0, str(root / 'src'))
 try:
     import tomllib
 except ImportError:
-    import tomli as tomllib
+    import tomli as tomllib # type: ignore
 
 with (root / 'pyproject.toml').open('rb') as file:
     pyproject = tomllib.load(file)

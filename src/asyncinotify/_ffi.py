@@ -18,13 +18,12 @@ class inotify_event(ctypes.Structure):
         ]
 
 
-def check_return(value: ctypes.c_int) -> ctypes.c_int:
+def check_return(value: int) -> int:
     if value == -1:
         errno = ctypes.get_errno()
         raise OSError(errno, os.strerror(errno))
 
     return value
-
 
 inotify_event_size = ctypes.sizeof(inotify_event)
 NAME_MAX = 255
