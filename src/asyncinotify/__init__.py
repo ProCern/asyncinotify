@@ -166,7 +166,7 @@ class Watch:
     :meth:`Inotify.add_watch` to create it.
     '''
 
-    __slots__ = ('_inotify', '_mask', '_path', '_wd')
+    __slots__ = ('_inotify', '_mask', '_path', '_wd', '__weakref__')
 
     def __init__(self, inotify: 'Inotify', path: Path, mask: Mask, wd: int) -> None:
         '''
@@ -379,7 +379,7 @@ class Inotify:
         iteration will also exit on a timeout.
     '''
 
-    __slots__ = ('_fd', '_watches', '_events', '_epoll', '_sync_timeout', '_cache_size')
+    __slots__ = ('_fd', '_watches', '_events', '_epoll', '_sync_timeout', '_cache_size', '__weakref__')
 
     def __init__(self,
                  flags: InitFlags = InitFlags.CLOEXEC | InitFlags.NONBLOCK,
