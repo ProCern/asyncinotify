@@ -404,41 +404,7 @@ class TestInotifyRepeat(unittest.TestCase):
                     | Mask.DELETE_SELF
                     | Mask.CLOSE
                     | Mask.MOVE)
-                task = asyncio.create_task(loop(n))
-                await asyncio.sleep(0.1)
-                with path.open('w'):
-                    pass
-                await asyncio.sleep(0.1)
-                task.cancel()
-            with Inotify() as n:
-                n.add_watch(path, Mask.ACCESS
-                    | Mask.MODIFY
-                    | Mask.OPEN
-                    | Mask.CREATE
-                    | Mask.DELETE
-                    | Mask.ATTRIB
-                    | Mask.DELETE
-                    | Mask.DELETE_SELF
-                    | Mask.CLOSE
-                    | Mask.MOVE)
-                task = asyncio.create_task(loop(n))
-                await asyncio.sleep(0.1)
-                with path.open('w'):
-                    pass
-                await asyncio.sleep(0.1)
-                task.cancel()
-            with Inotify() as n:
-                n.add_watch(path, Mask.ACCESS
-                    | Mask.MODIFY
-                    | Mask.OPEN
-                    | Mask.CREATE
-                    | Mask.DELETE
-                    | Mask.ATTRIB
-                    | Mask.DELETE
-                    | Mask.DELETE_SELF
-                    | Mask.CLOSE
-                    | Mask.MOVE)
-                task = asyncio.create_task(loop(n))
+                task = asyncio.ensure_future(loop(n))
                 await asyncio.sleep(0.1)
                 with path.open('w'):
                     pass
@@ -456,7 +422,7 @@ class TestInotifyRepeat(unittest.TestCase):
                     | Mask.DELETE_SELF
                     | Mask.CLOSE
                     | Mask.MOVE)
-                task = asyncio.create_task(loop(n))
+                task = asyncio.ensure_future(loop(n))
                 await asyncio.sleep(0.1)
                 path.unlink()
                 await asyncio.sleep(0.1)
