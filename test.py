@@ -18,7 +18,9 @@ else:
 import asyncio
 try:
     from asyncio import run
+    from asyncio import create_task
 except ImportError:
+    from asyncio import ensure_future as create_task
     def run(main): # type: ignore
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
@@ -404,7 +406,7 @@ class TestInotifyRepeat(unittest.TestCase):
                     | Mask.DELETE_SELF
                     | Mask.CLOSE
                     | Mask.MOVE)
-                task = asyncio.ensure_future(loop(n))
+                task = create_task(loop(n))
                 await asyncio.sleep(0.1)
                 with path.open('w'):
                     pass
@@ -422,7 +424,7 @@ class TestInotifyRepeat(unittest.TestCase):
                     | Mask.DELETE_SELF
                     | Mask.CLOSE
                     | Mask.MOVE)
-                task = asyncio.ensure_future(loop(n))
+                task = create_task(loop(n))
                 await asyncio.sleep(0.1)
                 path.unlink()
                 await asyncio.sleep(0.1)
