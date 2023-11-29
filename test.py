@@ -3,7 +3,6 @@
 # Copyright © 2019 Taylor C. Richberger
 # This code is released under the license described in the LICENSE file
 
-import os
 import sys
 
 import unittest
@@ -78,9 +77,9 @@ class TestInotify(unittest.TestCase):
 
     def test_foo_opened_and_closed(self):
         def test():
-            with open(self.dir / 'foo', 'w') as file:
+            with open(self.dir / 'foo', 'w'):
                 pass
-            with open(self.dir / 'foo', 'r') as file:
+            with open(self.dir / 'foo', 'r'):
                 pass
 
         events = self.gather_events(test)
@@ -92,7 +91,7 @@ class TestInotify(unittest.TestCase):
 
     def test_foo_deleted(self):
         def test():
-            with open(self.dir / 'foo', 'w') as file:
+            with open(self.dir / 'foo', 'w'):
                 pass
 
             (self.dir / 'foo').unlink()
@@ -115,7 +114,7 @@ class TestInotify(unittest.TestCase):
 
     def test_foo_moved(self):
         def test():
-            with open(self.dir / 'foo', 'w') as file:
+            with open(self.dir / 'foo', 'w'):
                 pass
 
             (self.dir / 'foo').rename(self.dir / 'bar')
@@ -131,7 +130,7 @@ class TestInotify(unittest.TestCase):
 
     def test_foo_attrib(self):
         def test():
-            with open(self.dir / 'foo', 'w') as file:
+            with open(self.dir / 'foo', 'w'):
                 pass
 
             (self.dir / 'foo').chmod(0o777)
@@ -249,9 +248,9 @@ class TestSyncInotify(unittest.TestCase):
 
     def test_foo_opened_and_closed(self):
         def test():
-            with open(self.dir / 'foo', 'w') as file:
+            with open(self.dir / 'foo', 'w'):
                 pass
-            with open(self.dir / 'foo', 'r') as file:
+            with open(self.dir / 'foo', 'r'):
                 pass
 
         events = self.gather_events(test)
@@ -263,7 +262,7 @@ class TestSyncInotify(unittest.TestCase):
 
     def test_foo_deleted(self):
         def test():
-            with open(self.dir / 'foo', 'w') as file:
+            with open(self.dir / 'foo', 'w'):
                 pass
 
             (self.dir / 'foo').unlink()
@@ -286,7 +285,7 @@ class TestSyncInotify(unittest.TestCase):
 
     def test_foo_moved(self):
         def test():
-            with open(self.dir / 'foo', 'w') as file:
+            with open(self.dir / 'foo', 'w'):
                 pass
 
             (self.dir / 'foo').rename(self.dir / 'bar')
@@ -302,7 +301,7 @@ class TestSyncInotify(unittest.TestCase):
 
     def test_foo_attrib(self):
         def test():
-            with open(self.dir / 'foo', 'w') as file:
+            with open(self.dir / 'foo', 'w'):
                 pass
 
             (self.dir / 'foo').chmod(0o777)
@@ -383,5 +382,96 @@ class TestSyncInotify(unittest.TestCase):
                 pass
             self.assertFalse(inotify.sync_get())
 
+class TestInotifyRepeat(unittest.TestCase):
+    async def _actual_test(self):
+        events: list[Event] = []
+
+        async def loop(n):
+            async for event in n:
+                events.append(event)
+
+        with TemporaryDirectory() as dir:
+            path = Path(dir) / 'file.txt'
+            path.touch()
+            with Inotify() as n:
+                n.add_watch(path, Mask.ACCESS
+                    | Mask.MODIFY
+                    | Mask.OPEN
+                    | Mask.CREATE
+                    | Mask.DELETE
+                    | Mask.ATTRIB
+                    | Mask.DELETE
+                    | Mask.DELETE_SELF
+                    | Mask.CLOSE
+                    | Mask.MOVE)
+                task = asyncio.create_task(loop(n))
+                await asyncio.sleep(0.1)
+                with path.open('w'):
+                    pass
+                await asyncio.sleep(0.1)
+                task.cancel()
+            with Inotify() as n:
+                n.add_watch(path, Mask.ACCESS
+                    | Mask.MODIFY
+                    | Mask.OPEN
+                    | Mask.CREATE
+                    | Mask.DELETE
+                    | Mask.ATTRIB
+                    | Mask.DELETE
+                    | Mask.DELETE_SELF
+                    | Mask.CLOSE
+                    | Mask.MOVE)
+                task = asyncio.create_task(loop(n))
+                await asyncio.sleep(0.1)
+                with path.open('w'):
+                    pass
+                await asyncio.sleep(0.1)
+                task.cancel()
+            with Inotify() as n:
+                n.add_watch(path, Mask.ACCESS
+                    | Mask.MODIFY
+                    | Mask.OPEN
+                    | Mask.CREATE
+                    | Mask.DELETE
+                    | Mask.ATTRIB
+                    | Mask.DELETE
+                    | Mask.DELETE_SELF
+                    | Mask.CLOSE
+                    | Mask.MOVE)
+                task = asyncio.create_task(loop(n))
+                await asyncio.sleep(0.1)
+                with path.open('w'):
+                    pass
+                await asyncio.sleep(0.1)
+                task.cancel()
+
+            with Inotify() as n:
+                n.add_watch(path, Mask.ACCESS
+                    | Mask.MODIFY
+                    | Mask.OPEN
+                    | Mask.CREATE
+                    | Mask.DELETE
+                    | Mask.ATTRIB
+                    | Mask.DELETE
+                    | Mask.DELETE_SELF
+                    | Mask.CLOSE
+                    | Mask.MOVE)
+                task = asyncio.create_task(loop(n))
+                await asyncio.sleep(0.1)
+                path.unlink()
+                await asyncio.sleep(0.1)
+                task.cancel()
+
+        print([event.mask for event in events])
+        self.assertTrue(any(Mask.OPEN in event for event in events))
+        self.assertTrue(any(Mask.CLOSE_WRITE in event for event in events))
+        self.assertTrue(any(Mask.DELETE_SELF in event for event in events))
+
+    def test_events(self):
+        run(self._actual_test())
+
+        
+
 if __name__ == '__main__':
     unittest.main()
+

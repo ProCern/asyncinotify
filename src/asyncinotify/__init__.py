@@ -2,10 +2,11 @@
 # Copyright © 2019-2023 Taylor C. Richberger
 # This code is released under the license described in the LICENSE file
 
+from contextlib import contextmanager
 from enum import IntFlag
 from io import BytesIO
 from pathlib import Path
-from typing import Optional, Union, Dict, List
+from typing import TYPE_CHECKING, Callable, Generator, Optional, Union, Dict, List, cast
 import os
 import weakref
 from weakref import ReferenceType
@@ -19,6 +20,23 @@ except ImportError:
     from asyncio import get_event_loop as get_running_loop
 
 from . import _ffi
+
+@contextmanager
+def _get_events_future(fd: int, get_function: Callable[[Union[Future, '_FakeFuture']], None]) -> Generator[Future, None, None]:
+    '''Watch a file descriptor, call a get function, and unwatch the file descriptor.
+    '''
+    event_loop = get_running_loop()
+    future = event_loop.create_future()
+    event_loop.add_reader(fd, get_function, future)
+    try:
+        yield future
+    finally:
+        try:
+            event_loop.remove_reader(fd)
+        except Exception:
+            # The fd might already be closed; we don't want to interrupt
+            # a CancelledError.
+            pass
 
 class InitFlags(IntFlag):
     '''Init flags for use with the :class:`Inotify` constructor.
@@ -385,14 +403,16 @@ class Inotify:
                  flags: InitFlags = InitFlags.CLOEXEC | InitFlags.NONBLOCK,
                  cache_size: int = 10, sync_timeout: Optional[float] = None) -> None:
         self.cache_size = cache_size
-        self._fd: Optional[int] = _ffi.libc.inotify_init1(flags)
+        fd = _ffi.libc.inotify_init1(flags)
+        self._fd: Optional[int] = fd
 
         # Watches dict used for matching events up with the watch descriptor,
         # in order to get the full item path.
         self._watches: Dict[int, Watch] = {}
 
         self._events: List[Event] = []
-        self._epoll: Optional[select.epoll] = None
+        self._epoll: select.epoll = select.epoll()
+        self._epoll.register(fd, select.EPOLLIN)
         self.sync_timeout = sync_timeout
 
     @property
@@ -407,13 +427,6 @@ class Inotify:
     @sync_timeout.setter
     def sync_timeout(self, value: Optional[float]) -> None:
         self._sync_timeout = value
-        if value is None and self._epoll is not None:
-            self._epoll.close()
-            self._epoll = None
-        elif value is not None and self._epoll is None:
-            self._epoll = select.epoll()
-            self._epoll.register(self.fd, select.EPOLLIN)
-
 
     @property
     def fd(self) -> int:
@@ -438,6 +451,11 @@ class Inotify:
             bytepath = path
             path = Path(os.fsdecode(bytepath))
         else:
+            # HACK: For some reason, pyright is convinced that path might be a
+            # memoryview or a bytearray here
+            if TYPE_CHECKING:
+                path = cast(Union[os.PathLike, str], path)
+
             # Convert non-Path to Path
             if not isinstance(path, Path):
                 path = Path(path)
@@ -501,6 +519,7 @@ class Inotify:
         '''
         self.sync_timeout = None
         if self._fd is not None:
+            self._epoll.close()
             os.close(self._fd)
             self._fd = None
 
@@ -590,13 +609,8 @@ class Inotify:
         :returns: a single :class:`Event`
         '''
         if not self._events:
-            event_loop = get_running_loop()
-            future = event_loop.create_future()
-            event_loop.add_reader(self.fd, self._get, future)
-            try:
+            with _get_events_future(self.fd, self._get) as future:
                 self._events = await future
-            finally:
-                event_loop.remove_reader(self.fd)
         return self._events.pop(0)
 
     def sync_get(self) -> Optional[Event]:
@@ -609,7 +623,6 @@ class Inotify:
         '''
         if not self._events:
             if self.sync_timeout is not None:
-                assert self._epoll is not None
                 if not self._epoll.poll(self.sync_timeout, 1):
                     return None
             future = _FakeFuture()
