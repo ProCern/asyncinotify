@@ -462,7 +462,6 @@ class TestInotifyRepeat(unittest.TestCase):
                 await asyncio.sleep(0.1)
                 task.cancel()
 
-        print([event.mask for event in events])
         self.assertTrue(any(Mask.OPEN in event for event in events))
         self.assertTrue(any(Mask.CLOSE_WRITE in event for event in events))
         self.assertTrue(any(Mask.DELETE_SELF in event for event in events))
