@@ -22,8 +22,8 @@ You know the drill::
 Usage
 -----
 
-The core of this package is :class:`asyncinotify.Inotify`.  Most important
-Classes may be imported directly from the :mod:`asyncinotify` package.
+The core of this package is ``asyncinotify.Inotify``.  Most important
+Classes may be imported directly from the ``asyncinotify`` package.
 
 .. code-block:: python
 
@@ -54,7 +54,7 @@ This will asynchronously watch the /tmp directory and report events it
 encounters.
 
 This library also supports synchronous operation, using the
-:meth:`asyncinotify.inotify.Inotify.sync_get`` method, or simply using
+`asyncinotify.inotify.Inotify.sync_get`` method, or simply using
 synchronous iteration.
 
 Motivation
