@@ -10,7 +10,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from asyncinotify import Event, Inotify, Mask
 
-if sys.version_info > (3, 8):
+if sys.version_info >= (3, 9):
     from collections.abc import Sequence
 else:
     from typing import Sequence
