@@ -35,39 +35,19 @@ package:
       - dist/*.whl
       - dist/*.tar.gz
 
-'test_3.6':
+test:
   stage: test
-  image: python:3.6
-  script:
-    - pip install ./dist/*.whl
-    - python test.py
-'test_3.7':
-  stage: test
-  image: python:3.7
-  script:
-    - pip install ./dist/*.whl
-    - python test.py
-'test_3.8':
-  stage: test
-  image: python:3.8
-  script:
-    - pip install ./dist/*.whl
-    - python test.py
-'test_3.9':
-  stage: test
-  image: python:3.9
-  script:
-    - pip install ./dist/*.whl
-    - python test.py
-'test_3.10':
-  stage: test
-  image: python:3.10
-  script:
-    - pip install ./dist/*.whl
-    - python test.py
-'test_3.11':
-  stage: test
-  image: python:3.11
+  parallel:
+    matrix:
+      - VERSION:
+        - '3.6'
+        - '3.7'
+        - '3.8'
+        - '3.9'
+        - '3.10'
+        - '3.11'
+        - '3.12'
+  image: python:$VERSION
   script:
     - pip install ./dist/*.whl
     - python test.py
@@ -75,10 +55,10 @@ package:
 deploy:
   stage: deploy
   script:
-    - pip install twine
+    - pip install wheel 'flit >=3.2, <4' build
     - echo '[pypi]' >"$HOME/.pypirc"
     - echo 'username = __token__' >>"$HOME/.pypirc"
     - echo "password = ${PYPI_TOKEN:?Only works on protected tags}" >>"$HOME/.pypirc"
-    - twine upload dist/*.whl dist/*.tar.gz
+    - flit publish
   rules:
     - if: $CI_COMMIT_TAG =~ /^v[0-9]/
