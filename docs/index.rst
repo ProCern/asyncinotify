@@ -35,7 +35,7 @@ Indices and tables
 
 .. _ospackage: https://docs.python.org/3/library/os.html#file-names-command-line-arguments-and-environment-variables
 .. _errorhandler: https://docs.python.org/3/library/codecs.html#error-handlers
-.. _GitHub: https://github.com/absperf/asyncinotify
+.. _GitHub: https://github.com/ProCern/asyncinotify
 .. _pathlib: https://docs.python.org/3/library/pathlib.html
 .. _ReadTheDocs: https://asyncinotify.readthedocs.io/en/latest/
 .. _PyPi: https://pypi.org/project/asyncinotify/
