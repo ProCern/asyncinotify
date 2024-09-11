@@ -481,10 +481,46 @@ class TestRecursiveWatcher(unittest.TestCase):
         self.assertEqual(str(paths[5]), os.path.join(tmpdirname, "level1.1", "level2.1", "level3.1"))
         self.assertEqual(str(paths[6]), os.path.join(tmpdirname, "level1.1", "level2.1", "level3.1", "level4.1"))
 
-
     def _assert_paths_watched(self, watchers, path_set):
         watched_path_set = {str(watch.path) for watch in watchers.values()}
         self.assertSetEqual(watched_path_set, path_set)
+
+    class _FakeWatcher:
+        def __init__(self, path) -> None:
+            self.path = path
+
+    def test_assert_paths_watched(self):
+        # both empty
+        self._assert_paths_watched({}, set())
+
+        # watchers empty
+        with self.assertRaises(AssertionError):
+            self._assert_paths_watched({}, {"/tmp/path1"})
+
+        # path set empty
+        with self.assertRaises(AssertionError):
+            self._assert_paths_watched({
+                "fd1": self._FakeWatcher(Path("/tmp/path1")),
+                "fd2": self._FakeWatcher(Path("/tmp/path2")),
+            }, set())
+
+        # identical sets
+        self._assert_paths_watched({
+            "fd1": self._FakeWatcher(Path("/tmp/path1")),
+            "fd2": self._FakeWatcher(Path("/tmp/path2")),
+        }, {
+            "/tmp/path2",
+            "/tmp/path1"
+        })
+
+        # diff sets
+        with self.assertRaises(AssertionError):
+            self._assert_paths_watched({
+                "fd1": self._FakeWatcher(Path("/tmp/path1")),
+            }, {
+                "/tmp/path2",
+                "/tmp/path1"
+            })
 
     def _create_file(self, file_path):
         with open(str(file_path), "w") as f:
