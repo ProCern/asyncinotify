@@ -12,6 +12,7 @@ import weakref
 from weakref import ReferenceType
 from asyncio import Future
 import select
+from collections import deque
 
 # Python 3.7 suggests get_running_loop for library code
 try:
@@ -418,7 +419,7 @@ class Inotify:
     @property
     def sync_timeout(self) -> Optional[float]:
         '''The timeout for :meth:`sync_get` and synchronous iteration.
-        
+
         Set this to None to disable and -1 to wait forever.  These options can
         be different depending on the blocking flags selected.
         '''
@@ -649,3 +650,69 @@ class Inotify:
         if event is None:
             raise StopIteration
         return event
+
+class RecursiveWatcher:
+    """
+    watch a folder recursively:
+    add a watch when a folder is created/moved in
+    delete a watch when a folder is deleted/moved out
+    this also works for folders moving within the watched folders because both move_from event and move_to event will be caught
+    """
+    def __init__(self, path, mask) -> None:
+        self._path = path
+        self._mask = mask
+
+    def _get_directories_recursive(self, path):
+        """
+        DFS to iterate all paths within
+        """
+        if not path.is_dir():
+            return
+
+        stack = deque()
+        stack.append(path)
+        while stack:
+            curr_path = stack.pop()
+            yield curr_path
+            for subpath in curr_path.iterdir():
+                if subpath.is_dir():
+                    stack.append(subpath)
+
+    async def watch_recursive(self, inotify=None):
+        create_inotify = inotify is None
+        if create_inotify:
+            inotify = Inotify()
+
+        try:
+            mask = self._mask | Mask.MOVED_FROM | Mask.MOVED_TO | Mask.CREATE | Mask.IGNORED
+            for directory in self._get_directories_recursive(self._path):
+                inotify.add_watch(directory, mask)
+
+            # Things that can throw this off:
+            #
+            # * Doing two changes on a directory or something before the program
+            #   has a time to handle it (this will also throw off a lot of inotify
+            #   code, though)
+            #
+            # * Trying to watch a path that doesn't exist won't automatically
+            #   create it or anything of the sort.
+
+            async for event in inotify:
+                if Mask.ISDIR in event.mask and event.path is not None:
+                    if Mask.CREATE in event.mask or Mask.MOVED_TO in event.mask:
+                        # created new folder or folder moved in, add watches
+                        for directory in self._get_directories_recursive(event.path):
+                            inotify.add_watch(directory, mask)
+                    if Mask.MOVED_FROM in event.mask:
+                        # a folder is moved to another location, remove watch for this folder and subfolders
+                        watches = [watch for watch in inotify._watches.values() if watch.path.is_relative_to(event.path)]
+                        for watch in watches:
+                            inotify.rm_watch(watch)
+
+                    # DELETE event is not watched/handled here because IGNORED event follows deletion, and handled in asyncinotify
+
+                if event.mask & self._mask:
+                    yield event
+        finally:
+            if create_inotify:
+                inotify.close()
