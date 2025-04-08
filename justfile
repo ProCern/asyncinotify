@@ -33,7 +33,7 @@ _list:
   @just --list
 
 # Run all tests
-test: python-tests debian-tests ubuntu-tests fedora-tests rhel-tests alpine-tests
+test: python-tests debian-tests ubuntu-tests fedora-tests rhel-tests alpine-tests centos-stream-tests
 
 # Run a test with a given setup in the given container
 _run-test $container $setup="":
@@ -46,7 +46,7 @@ _run-test $container $setup="":
     --mount type=volume,destination=/mnt/venv \
     --mount type=bind,source=.,destination=/mnt/app,ro=true \
     --security-opt label=disable \
-    "docker.io/$container" \
+    "$container" \
     /bin/sh -c "
       set -euxf
 
@@ -55,41 +55,47 @@ _run-test $container $setup="":
     "
 
 # Test a particular python version
-test-python version="latest": (_run-test ("python:" + version))
+test-python version="latest": (_run-test ("docker.io/python:" + version))
 
 # Test all supported python versions
-python-tests: (test-python "3.6") (test-python "3.7") (test-python "3.8") (test-python "3.9") (test-python "3.10") (test-python "3.11") (test-python "3.12")
+python-tests: (test-python "3.9") (test-python "3.10") (test-python "3.11") (test-python "3.12") (test-python "3.13")
 
 # Test a particular alpine version
-test-alpine version="latest": (_run-test ("alpine:" + version) apk-setup)
+test-alpine version="latest": (_run-test ("docker.io/alpine:" + version) apk-setup)
 
 # Test all supported alpine versions
-alpine-tests: (test-alpine "3.17") (test-alpine "3.18") (test-alpine "3.19") (test-alpine "3.20")
+alpine-tests: (test-alpine "3.18") (test-alpine "3.19") (test-alpine "3.20") (test-alpine "3.21")
 
 _test-apt image="debian:latest": (_run-test image apt-setup)
 
 # Test a particular debian version
-test-debian version="latest": (_test-apt ("debian:" + version))
+test-debian version="latest": (_test-apt ("docker.io/debian:" + version))
 
 # Test a particular ubuntu version
-test-ubuntu version="latest": (_test-apt ("ubuntu:" + version))
+test-ubuntu version="latest": (_test-apt ("docker.io/ubuntu:" + version))
 
 # Test all supported debian versions
-debian-tests: (test-debian "buster") (test-debian "bullseye") (test-debian "bookworm")
+debian-tests: (test-debian "bullseye") (test-debian "bookworm")
 
 # Test all supported ubuntu versions
-ubuntu-tests: (test-ubuntu "18.04") (test-ubuntu "20.04") (test-ubuntu "22.04") (test-ubuntu "24.04")
+ubuntu-tests: (test-ubuntu "20.04") (test-ubuntu "22.04") (test-ubuntu "24.04")
 
 _test-dnf image="fedora:latest": (_run-test image dnf-setup)
 
 # Test a particular fedora version
-test-fedora version="latest": (_test-dnf ("fedora:" + version))
+test-fedora version="latest": (_test-dnf ("docker.io/fedora:" + version))
 
 # Test all supported fedora versions
-fedora-tests: (test-fedora "38") (test-fedora "39") (test-fedora "40")
+fedora-tests: (test-fedora "40") (test-fedora "41") (test-fedora "42")
 
 # Test a particular RHEL version
-test-rhel version="ubi9": (_test-dnf ("redhat/" + version))
+test-rhel version="9": (_test-dnf ("docker.io/almalinux:" + version))
 
 # Test all supported RHEL versions
-rhel-tests: (test-rhel "ubi8") (test-rhel "ubi9")
+rhel-tests: (test-rhel "9") (test-rhel "9")
+
+# Test a particular RHEL version
+test-centos-stream version="stream10": (_test-dnf ("quay.io/centos/centos:" + version))
+
+# Test all supported RHEL versions
+centos-stream-tests: (test-centos-stream "stream9") (test-rhel "stream10")

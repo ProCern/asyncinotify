@@ -5,8 +5,6 @@ An async python inotify package.  Kept as simple and easy-to-understand as
 possible, while still being flexible and powerful.  This is built on no external
 dependencies, and works through ctypes in a very obvious fashion.
 
-This depends on Python 3.6+ features, and will not work with prior versions.
-
 This works without any other external dependencies.
 
 The code is available on GitHub_ and the documentation is available on
@@ -56,6 +54,17 @@ encounters.
 This library also supports synchronous operation, using the
 `asyncinotify.inotify.Inotify.sync_get`` method, or simply using
 synchronous iteration.
+
+Support
+-------
+
+This is supported and tested on the following:
+
+* Python 3.6, 3.7, 3.8, 3.9, 3.10, 3.11, 3.12, and 3.13
+* Debian bullseye and bookworm
+* Ubuntu 20.04, 22.04, and 24.04
+* Fedora 40, 41, and 42
+* Alma Linux 8 and 9 (Should be equivalent to RHEL)
 
 Motivation
 ----------

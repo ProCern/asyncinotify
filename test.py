@@ -8,7 +8,6 @@ import os
 import shutil
 
 import unittest
-from unittest import mock
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from asyncinotify import Event, Inotify, Mask, RecursiveWatcher
@@ -440,25 +439,9 @@ class TestInotifyRepeat(unittest.TestCase):
     def test_events(self):
         run(self._actual_test())
 
+
 class TestRecursiveWatcher(unittest.TestCase):
-
-    @staticmethod
-    def _mock_iterdir(path):
-        name = path.name
-        if name == "tmp":
-            return [Path.joinpath(path, "level1.1"), Path.joinpath(path, "level1.2")]
-        if name == "level1.1":
-            return [Path.joinpath(path, "level2.1"), Path.joinpath(path, "level2.2")]
-        if name == "level2.1":
-            return [Path.joinpath(path, "level3.1")]
-        if name == "level3.1":
-            return [Path.joinpath(path, "level4.1")]
-        # others
-        return []
-
-    @mock.patch.object(Path, "iterdir", autospec=True, side_effect=_mock_iterdir)
-    @mock.patch.object(Path, "is_dir", return_result=True)
-    def test_get_directories_recursive(self, mocked_isdir, mocked_iterdir):
+    def test_get_directories_recursive(self):
         """
         create folder tree as:
         level1.1
@@ -468,18 +451,22 @@ class TestRecursiveWatcher(unittest.TestCase):
             -level2.2
         level1.2
         """
-
-        tmpdirname = "/tmp"
-        watcher = RecursiveWatcher(None, None)
-        paths = [path for path in watcher._get_directories_recursive(Path(tmpdirname))]
-        self.assertEqual(len(paths), 7)
-        self.assertEqual(str(paths[0]), tmpdirname)
-        self.assertEqual(str(paths[1]), os.path.join(tmpdirname, "level1.2"))
-        self.assertEqual(str(paths[2]), os.path.join(tmpdirname, "level1.1"))
-        self.assertEqual(str(paths[3]), os.path.join(tmpdirname, "level1.1", "level2.2"))
-        self.assertEqual(str(paths[4]), os.path.join(tmpdirname, "level1.1", "level2.1"))
-        self.assertEqual(str(paths[5]), os.path.join(tmpdirname, "level1.1", "level2.1", "level3.1"))
-        self.assertEqual(str(paths[6]), os.path.join(tmpdirname, "level1.1", "level2.1", "level3.1", "level4.1"))
+        with TemporaryDirectory() as tmpdirname:
+            tmpdir = Path(tmpdirname)
+            (tmpdir / 'level1.1' / 'level2.1' / 'level3.1' / 'level4.1').mkdir(parents=True, exist_ok=True)
+            (tmpdir / 'level1.1' / 'level2.2').mkdir(parents=True, exist_ok=True)
+            (tmpdir / 'level1.2').mkdir(parents=True, exist_ok=True)
+            watcher = RecursiveWatcher(None, None)
+            paths = [path for path in watcher._get_directories_recursive(Path(tmpdirname))]
+            self.assertEqual(set(paths), {
+                tmpdir,
+                Path(tmpdirname) / "level1.2",
+                Path(tmpdirname) / "level1.1",
+                Path(tmpdirname) / "level1.1" / "level2.2",
+                Path(tmpdirname) / "level1.1" / "level2.1",
+                Path(tmpdirname) / "level1.1" / "level2.1" / "level3.1",
+                Path(tmpdirname) / "level1.1" / "level2.1" / "level3.1" / "level4.1",
+            })
 
     def _assert_paths_watched(self, watchers, path_set):
         watched_path_set = {str(watch.path) for watch in watchers.values()}
@@ -556,7 +543,7 @@ class TestRecursiveWatcher(unittest.TestCase):
             os.makedirs(outside_dir)
 
             with Inotify() as inotify:
-                watch_task = asyncio.create_task(self._read_events(inotify, tmpdirname, events))
+                watch_task = create_task(self._read_events(inotify, tmpdirname, events))
                 await asyncio.sleep(0.3)
 
                 # existing 2 folders are watched

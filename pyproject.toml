@@ -1,7 +1,7 @@
 [project]
 name = 'asyncinotify'
 description = 'A simple optionally-async python inotify library, focused on simplicity of use and operation, and leveraging modern Python features'
-version = '4.2.0'
+version = '4.2.1'
 readme = 'README.rst'
 requires-python = '>= 3.6, < 4'
 license = {text = 'MPL-2.0'}
@@ -24,7 +24,7 @@ classifiers=[
 
 [[project.authors]]
 name = "Taylor C. Richberger"
-email = "tcr@absolute-performance.com"
+email = "taylor.richberger@procern.com"
 
 [project.urls]
 repository  = 'https://github.com/ProCern/asyncinotify/'

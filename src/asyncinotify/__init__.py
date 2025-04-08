@@ -5,7 +5,7 @@
 from contextlib import contextmanager
 from enum import IntFlag
 from io import BytesIO
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import TYPE_CHECKING, Callable, Generator, Optional, Union, Dict, List, cast
 import os
 import weakref
@@ -704,8 +704,9 @@ class RecursiveWatcher:
                         for directory in self._get_directories_recursive(event.path):
                             inotify.add_watch(directory, mask)
                     if Mask.MOVED_FROM in event.mask:
+                        event_path = PurePath(event.path)
                         # a folder is moved to another location, remove watch for this folder and subfolders
-                        watches = [watch for watch in inotify._watches.values() if watch.path.is_relative_to(event.path)]
+                        watches = [watch for watch in inotify._watches.values() if watch.path == event_path or event_path in watch.path.parents]
                         for watch in watches:
                             inotify.rm_watch(watch)
 
