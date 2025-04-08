@@ -98,4 +98,4 @@ rhel-tests: (test-rhel "9") (test-rhel "9")
 test-centos-stream version="stream10": (_test-dnf ("quay.io/centos/centos:" + version))
 
 # Test all supported RHEL versions
-centos-stream-tests: (test-centos-stream "stream9") (test-rhel "stream10")
+centos-stream-tests: (test-centos-stream "stream9") (test-centos-stream "stream10")
