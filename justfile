@@ -58,7 +58,7 @@ _run-test $container $setup="":
 test-python version="latest": (_run-test ("docker.io/python:" + version))
 
 # Test all supported python versions
-python-tests: (test-python "3.9") (test-python "3.10") (test-python "3.11") (test-python "3.12") (test-python "3.13")
+python-tests: (test-python "3.6") (test-python "3.7") (test-python "3.8") (test-python "3.9") (test-python "3.10") (test-python "3.11") (test-python "3.12") (test-python "3.13")
 
 # Test a particular alpine version
 test-alpine version="latest": (_run-test ("docker.io/alpine:" + version) apk-setup)
