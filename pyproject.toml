@@ -4,7 +4,7 @@ description = 'A simple optionally-async python inotify library, focused on simp
 version = '4.2.1'
 readme = 'README.rst'
 requires-python = '>= 3.6, < 4'
-license = {text = 'MPL-2.0'}
+license = 'MPL-2.0'
 keywords = [
     'async',
     'inotify',
@@ -15,7 +15,6 @@ classifiers=[
     'Programming Language :: Python :: 3',
     'Programming Language :: Python :: 3.6',
     'Operating System :: POSIX :: Linux',
-    'License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)',
     'Topic :: Software Development :: Libraries',
     'Topic :: Software Development :: Libraries :: Python Modules',
     'Intended Audience :: Developers',
@@ -32,4 +31,4 @@ documentation = 'https://asyncinotify.readthedocs.io/'
 
 [build-system]
 build-backend = "flit_core.buildapi"
-requires = ["flit_core >=3.2,<4", 'wheel']
+requires = ["flit_core >=3.12,<4"]
