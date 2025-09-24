@@ -667,6 +667,83 @@ class Inotify:
             raise StopIteration
         return event
 
+
+class RecursiveInotify(Inotify):
+    _DIR_MASK = Mask.MOVED_FROM | Mask.MOVED_TO | Mask.CREATE | Mask.IGNORED
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._mask_map: dict[Path, Mask | None] = {}
+
+    def add_recursive_watch(
+        self, path: Path, mask: Mask | None = None
+    ) -> list[Watch]:
+        watches: list[Watch] = []
+        for root, _, _ in path.walk():
+            if not root.is_dir():
+                continue
+
+            self._mask_map[root] = mask
+            if mask is None:
+                mask = self._DIR_MASK
+            else:
+                mask |= self._DIR_MASK
+            watches.append(self.add_watch(root, mask))
+            # logger.debug(f"Added a watch for directory {root}")
+
+        return watches
+
+    def __enter__(self) -> "RecursiveInotify":
+        return self
+
+    def __iter__(self) -> "RecursiveInotify":
+        return self
+
+    def __aiter__(self) -> "RecursiveInotify":
+        return self
+
+    def sync_get(self) -> Event | None:
+        ev = super().sync_get()
+        if ev is None:
+            return
+
+        if Mask.ISDIR in ev.mask:
+            self._handle_directory_event(ev)
+
+        return ev
+
+    async def get(self) -> Event:
+        ev = await super().get()
+
+        if Mask.ISDIR in ev.mask:
+            self._handle_directory_event(ev)
+
+        return ev
+
+    def _handle_directory_event(self, event: Event) -> None:
+        if event.path is None:
+            return
+
+        elif Mask.CREATE in event.mask or Mask.MOVED_TO in event.mask:
+            # created new folder or folder moved in, add watches
+            mask = self._DIR_MASK
+            if (stored_mask := self._mask_map.get(event.path)) is not None:
+                mask |= stored_mask
+            self.add_recursive_watch(event.path, mask)
+
+        elif Mask.MOVED_FROM in event.mask:
+            event_path = PurePath(event.path)
+            # a folder is moved to another location, remove watch
+            # for this folder and subfolders
+            for watch in self._watches.values():
+                if watch.path == event_path or event_path in watch.path.parents:
+                    # logger.debug(f"Removing watch on directory: {event.path}")
+                    self.rm_watch(watch)
+
+        # IGNORED (directory deletion) is already handled within asyncinotify
+        # at this point
+
+
 class RecursiveWatcher:
     """
     watch a folder recursively:
