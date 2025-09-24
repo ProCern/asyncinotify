@@ -71,6 +71,9 @@ class Mask(IntFlag):
 
     __slots__ = ()
 
+    #: No flag, to facilitate defaults
+    _ZERO = 0
+
     #: File was accessed (e.g., read(2), execve(2)).
     ACCESS = 0x00000001
 
