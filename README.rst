@@ -60,11 +60,18 @@ Support
 
 This is supported and tested on the following:
 
-* Python 3.6, 3.7, 3.8, 3.9, 3.10, 3.11, 3.12, and 3.13
-* Debian bullseye and bookworm
+* Python 3.6, 3.7, 3.8, 3.9, 3.10, 3.11, 3.12, 3.13, and 3.14
+* Debian bullseye, bookworm, and trixie
 * Ubuntu 20.04, 22.04, and 24.04
-* Fedora 40, 41, and 42
-* Alma Linux 8 and 9 (Should be equivalent to RHEL)
+* Fedora 42 and 43
+* Alma Linux 8, 9 and 10 (Should be equivalent to RHEL)
+* Alpine Linux 3.19 through 3.22
+
+We regularly remove out-of-support OSes from the tests and add new releases.
+
+We support back to Python 3.6 as long as it remains easy to do so.  We may, in
+some future version, restrict Python support to non-EOL versions, if supporting
+the older versions becomes inconvenient.
 
 Motivation
 ----------
