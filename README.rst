@@ -80,8 +80,10 @@ quite simple and easy to understand.
 
 This library
 
-* Works in a very simple way.  It does not have add-ons or extra features beyond
-  presenting a very Python interface to the raw inotify functionality.
+* Works in a very simple way.  It does not have many add-ons or extra features beyond
+  presenting a very Python interface to the raw inotify functionality.  Any extra
+  features (such as recursive watching) are presented as completely separate classes.
+  The core inotify functionality is as pure as it can reasonably be.
 
 * Grabs events in bulk and caches them for minor performance gains.
 
