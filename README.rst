@@ -104,3 +104,26 @@ that I would feel comfortable using.
 .. _pathlib: https://docs.python.org/3/library/pathlib.html
 .. _ReadTheDocs: https://asyncinotify.readthedocs.io/en/latest/
 .. _PyPi: https://pypi.org/project/asyncinotify/
+
+
+License
+-------
+
+This code is Copyright 2019 - 2023 Absolute Performance, Inc, and 2024 - 2025
+ProCern Technology Solutions.
+
+It is written and maintained by `Taylor C. Richberger <mailto:taylor.richberger@procern.com>`_.
+
+This Source Code Form is subject to the terms of the Mozilla Public License, v.
+2.0. If a copy of the MPL was not distributed with this file, You can obtain one
+at https://mozilla.org/MPL/2.0/.
+
+Note that this does **not** have the Exhibit B - “Incompatible With Secondary
+Licenses” Notice.  This software is explicitly **compatible** with secondary
+licenses.  It is MPL 2.0 to ensure that any improvements and other changes are
+distributed.  We do not want to inhibit nor prohibit its use with other FOSS or
+proprietary software, regardless of the license.  In other words, if you aren't
+changing asyncinotify, you can pretty much just use it as a library without
+worrying, unless your other license is explicitly or implicitly incompatible
+with it (which should be incredibly uncommon).
+
