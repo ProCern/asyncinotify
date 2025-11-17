@@ -72,7 +72,7 @@ class Mask(IntFlag):
     __slots__ = ()
 
     #: No flag, to facilitate defaults
-    _ZERO = 0
+    ZERO = 0
 
     #: File was accessed (e.g., read(2), execve(2)).
     ACCESS = 0x00000001
@@ -179,6 +179,10 @@ class Mask(IntFlag):
     #: Monitor the filesystem object corresponding to pathname for one event,
     #: then remove from watch list.
     ONESHOT = 0x80000000
+
+    #: Monitor all common types of events.  This does not include modifier flags like ONESHOT, MASK_CREATE, EXEC_UNLINK, etc.
+    ALL = ACCESS | MODIFY | ATTRIB | CLOSE | OPEN | MOVE | CREATE | DELETE | DELETE_SELF | MOVE_SELF | UNMOUNT
+
 
 
 class Watch:
