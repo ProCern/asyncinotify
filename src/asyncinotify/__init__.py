@@ -7,6 +7,10 @@
 # ProCern Technology Solutions.
 # It is written and maintained by Taylor C. Richberger <taylor.richberger@procern.com>
 
+''''A simple optionally-async python inotify library, focused on simplicity of use and operation, and leveraging modern Python features'''
+
+__version__ = '4.2.2'
+
 from contextlib import contextmanager
 from enum import IntFlag
 from io import BytesIO
