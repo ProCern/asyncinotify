@@ -67,7 +67,7 @@ class TestInotify(unittest.TestCase):
         self._dir = TemporaryDirectory()
         self.dir = Path(self._dir.name)
         self.inotify = Inotify()
-        self.watch = self.inotify.add_watch(self.dir, Mask.ACCESS | Mask.MODIFY | Mask.ATTRIB | Mask.CLOSE_WRITE | Mask.CLOSE_NOWRITE | Mask.OPEN | Mask.MOVED_FROM | Mask.MOVED_TO | Mask.CREATE | Mask.DELETE | Mask.DELETE_SELF | Mask.MOVE_SELF)
+        self.watch = self.inotify.add_watch(self.dir, Mask.ALL)
 
     def tearDown(self):
         self._dir.cleanup()

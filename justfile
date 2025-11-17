@@ -44,7 +44,7 @@ _run-test $container $setup="":
     --rm \
     -e PYTHONPATH=/mnt/app/src \
     --mount type=volume,destination=/mnt/venv \
-    --mount type=bind,source=.,destination=/mnt/app,ro=true \
+    --mount type=bind,source=$(pwd),destination=/mnt/app,ro=true \
     --security-opt label=disable \
     "$container" \
     /bin/sh -c "
