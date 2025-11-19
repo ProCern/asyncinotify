@@ -647,25 +647,29 @@ class Inotify:
             self._events = future.result
         return self._events.pop(0)
 
-    def __aiter__(self) -> 'Inotify':
+    def __aiter__(self) -> "Inotify":
         return self
 
-    def __iter__(self) -> 'Inotify':
+    def __iter__(self) -> "Inotify":
         return self
 
     async def __anext__(self) -> Event:
-        '''Iterate inotify events forever with :meth:`get`.'''
+        """Iterate inotify events forever with :meth:`get`."""
         return await self.get()
 
     def __next__(self) -> Event:
-        '''Iterate inotify events with :meth:`sync_get`.
+        """Iterate inotify events with :meth:`sync_get`.
 
         If sync_timeout is None or -1, this will iterate forever, otherwise it iterates until a timeout is reached.
-        '''
+        """
         event = self.sync_get()
         if event is None:
             raise StopIteration
         return event
+
+    @property
+    def watches(self) -> list[Watch]:
+        return list(self._watches.values())
 
 
 class RecursiveInotify(Inotify):
