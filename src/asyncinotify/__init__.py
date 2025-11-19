@@ -693,7 +693,6 @@ class RecursiveInotify(Inotify):
             else:
                 mask |= self._DIR_MASK
             watches.append(self.add_watch(root, mask))
-            # logger.debug(f"Added a watch for directory {root}")
 
         return watches
 
@@ -728,6 +727,9 @@ class RecursiveInotify(Inotify):
         if event.path is None:
             return
 
+        elif event.path.parent not in self._mask_map:
+            print(f"Not handling directory event in non-recursive path {event.path}")
+
         elif Mask.CREATE in event.mask or Mask.MOVED_TO in event.mask:
             # created new folder or folder moved in, add watches
             mask = self._DIR_MASK
@@ -741,7 +743,6 @@ class RecursiveInotify(Inotify):
             # for this folder and subfolders
             for watch in self._watches.values():
                 if watch.path == event_path or event_path in watch.path.parents:
-                    # logger.debug(f"Removing watch on directory: {event.path}")
                     self.rm_watch(watch)
 
         # IGNORED (directory deletion) is already handled within asyncinotify
@@ -781,7 +782,13 @@ class RecursiveWatcher:
             inotify = Inotify()
 
         try:
-            mask = self._mask | Mask.MOVED_FROM | Mask.MOVED_TO | Mask.CREATE | Mask.IGNORED
+            mask = (
+                self._mask
+                | Mask.MOVED_FROM
+                | Mask.MOVED_TO
+                | Mask.CREATE
+                | Mask.IGNORED
+            )
             for directory in self._get_directories_recursive(self._path):
                 inotify.add_watch(directory, mask)
 
@@ -803,7 +810,12 @@ class RecursiveWatcher:
                     if Mask.MOVED_FROM in event.mask:
                         event_path = PurePath(event.path)
                         # a folder is moved to another location, remove watch for this folder and subfolders
-                        watches = [watch for watch in inotify._watches.values() if watch.path == event_path or event_path in watch.path.parents]
+                        watches = [
+                            watch
+                            for watch in inotify._watches.values()
+                            if watch.path == event_path
+                            or event_path in watch.path.parents
+                        ]
                         for watch in watches:
                             inotify.rm_watch(watch)
 
