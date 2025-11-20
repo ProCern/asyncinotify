@@ -647,25 +647,107 @@ class Inotify:
             self._events = future.result
         return self._events.pop(0)
 
-    def __aiter__(self) -> 'Inotify':
+    def __aiter__(self) -> "Inotify":
         return self
 
-    def __iter__(self) -> 'Inotify':
+    def __iter__(self) -> "Inotify":
         return self
 
     async def __anext__(self) -> Event:
-        '''Iterate inotify events forever with :meth:`get`.'''
+        """Iterate inotify events forever with :meth:`get`."""
         return await self.get()
 
     def __next__(self) -> Event:
-        '''Iterate inotify events with :meth:`sync_get`.
+        """Iterate inotify events with :meth:`sync_get`.
 
         If sync_timeout is None or -1, this will iterate forever, otherwise it iterates until a timeout is reached.
-        '''
+        """
         event = self.sync_get()
         if event is None:
             raise StopIteration
         return event
+
+    @property
+    def watches(self) -> list[Watch]:
+        return list(self._watches.values())
+
+
+class RecursiveInotify(Inotify):
+    _DIR_MASK = Mask.MOVED_FROM | Mask.MOVED_TO | Mask.CREATE | Mask.IGNORED
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._mask_map: dict[Path, Mask | None] = {}
+
+    def add_recursive_watch(
+        self, path: Path, mask: Mask | None = None
+    ) -> list[Watch]:
+        watches: list[Watch] = []
+        for root, _, _ in path.walk():
+            if not root.is_dir():
+                continue
+
+            self._mask_map[root] = mask
+            if mask is None:
+                mask = self._DIR_MASK
+            else:
+                mask |= self._DIR_MASK
+            watches.append(self.add_watch(root, mask))
+
+        return watches
+
+    def __enter__(self) -> "RecursiveInotify":
+        return self
+
+    def __iter__(self) -> "RecursiveInotify":
+        return self
+
+    def __aiter__(self) -> "RecursiveInotify":
+        return self
+
+    def sync_get(self) -> Event | None:
+        ev = super().sync_get()
+        if ev is None:
+            return
+
+        if Mask.ISDIR in ev.mask:
+            self._handle_directory_event(ev)
+
+        return ev
+
+    async def get(self) -> Event:
+        ev = await super().get()
+
+        if Mask.ISDIR in ev.mask:
+            self._handle_directory_event(ev)
+
+        return ev
+
+    def _handle_directory_event(self, event: Event) -> None:
+        if event.path is None:
+            return
+
+        elif event.path.parent not in self._mask_map:
+            print(f"Not handling directory event in non-recursive path {event.path}")
+
+        elif Mask.CREATE in event.mask or Mask.MOVED_TO in event.mask:
+            # created new folder or folder moved in, add watches
+            mask = self._DIR_MASK
+            if (stored_mask := self._mask_map.get(event.path)) is not None:
+                mask |= stored_mask
+            self.add_recursive_watch(event.path, mask)
+
+        elif Mask.MOVED_FROM in event.mask:
+            event_path = PurePath(event.path)
+            # a folder is moved to another location, remove watch
+            # for this folder and subfolders
+            for watch in self._watches.values():
+                if watch.path == event_path or event_path in watch.path.parents:
+                    self.rm_watch(watch)
+
+        # IGNORED (directory deletion) is already handled within asyncinotify
+        # at this point
+
 
 class RecursiveWatcher:
     """
@@ -700,7 +782,13 @@ class RecursiveWatcher:
             inotify = Inotify()
 
         try:
-            mask = self._mask | Mask.MOVED_FROM | Mask.MOVED_TO | Mask.CREATE | Mask.IGNORED
+            mask = (
+                self._mask
+                | Mask.MOVED_FROM
+                | Mask.MOVED_TO
+                | Mask.CREATE
+                | Mask.IGNORED
+            )
             for directory in self._get_directories_recursive(self._path):
                 inotify.add_watch(directory, mask)
 
@@ -722,7 +810,12 @@ class RecursiveWatcher:
                     if Mask.MOVED_FROM in event.mask:
                         event_path = PurePath(event.path)
                         # a folder is moved to another location, remove watch for this folder and subfolders
-                        watches = [watch for watch in inotify._watches.values() if watch.path == event_path or event_path in watch.path.parents]
+                        watches = [
+                            watch
+                            for watch in inotify._watches.values()
+                            if watch.path == event_path
+                            or event_path in watch.path.parents
+                        ]
                         for watch in watches:
                             inotify.rm_watch(watch)
 
