@@ -17,6 +17,7 @@ from io import BytesIO
 from pathlib import Path, PurePath
 from typing import TYPE_CHECKING, Callable, Generator, Optional, Union, Dict, List, cast
 import os
+from warnings import warn
 import weakref
 from weakref import ReferenceType
 from asyncio import Future
@@ -668,7 +669,7 @@ class Inotify:
         return event
 
     @property
-    def watches(self) -> list[Watch]:
+    def watches(self) -> List[Watch]:
         return list(self._watches.values())
 
 
@@ -677,22 +678,23 @@ class RecursiveInotify(Inotify):
 
     def __init__(self) -> None:
         super().__init__()
-        self._mask_map: dict[Path, Mask | None] = {}
+        self._mask_map: Dict[Path, Optional[Mask]] = {}
 
     def add_recursive_watch(
-        self, path: Path, mask: Mask | None = None
-    ) -> list[Watch]:
-        watches: list[Watch] = []
-        for root, _, _ in path.walk():
-            if not root.is_dir():
-                continue
-
-            self._mask_map[root] = mask
-            if mask is None:
-                mask = self._DIR_MASK
-            else:
-                mask |= self._DIR_MASK
-            watches.append(self.add_watch(root, mask))
+        self, path: Path, mask: Optional[Mask] = None
+    ) -> List[Watch]:
+        if not path.is_dir():
+            raise ValueError('Path must refer to a directory')
+        watches: List[Watch] = []
+        if mask is None:
+            set_mask = self._DIR_MASK
+        else:
+            set_mask = mask | self._DIR_MASK
+        watches.append(self.add_watch(path, set_mask))
+        self._mask_map[path] = mask
+        for child in path.iterdir():
+            if child.is_dir():
+                watches += self.add_recursive_watch(child, mask)
 
         return watches
 
@@ -705,13 +707,16 @@ class RecursiveInotify(Inotify):
     def __aiter__(self) -> "RecursiveInotify":
         return self
 
-    def sync_get(self) -> Event | None:
+    def sync_get(self) -> Optional[Event]:
         ev = super().sync_get()
         if ev is None:
             return
 
         if Mask.ISDIR in ev.mask:
             self._handle_directory_event(ev)
+
+        if Mask.IGNORED in ev.mask and ev.path in self._mask_map:
+            del self._mask_map[ev.path]
 
         return ev
 
@@ -721,6 +726,9 @@ class RecursiveInotify(Inotify):
         if Mask.ISDIR in ev.mask:
             self._handle_directory_event(ev)
 
+        if Mask.IGNORED in ev.mask and ev.path in self._mask_map:
+            del self._mask_map[ev.path]
+
         return ev
 
     def _handle_directory_event(self, event: Event) -> None:
@@ -728,12 +736,13 @@ class RecursiveInotify(Inotify):
             return
 
         elif event.path.parent not in self._mask_map:
-            print(f"Not handling directory event in non-recursive path {event.path}")
+            warn(f"Not handling directory event in non-recursive path {event.path}")
 
         elif Mask.CREATE in event.mask or Mask.MOVED_TO in event.mask:
             # created new folder or folder moved in, add watches
             mask = self._DIR_MASK
-            if (stored_mask := self._mask_map.get(event.path)) is not None:
+            stored_mask = self._mask_map.get(event.path)
+            if stored_mask is not None:
                 mask |= stored_mask
             self.add_recursive_watch(event.path, mask)
 
@@ -744,9 +753,6 @@ class RecursiveInotify(Inotify):
             for watch in self._watches.values():
                 if watch.path == event_path or event_path in watch.path.parents:
                     self.rm_watch(watch)
-
-        # IGNORED (directory deletion) is already handled within asyncinotify
-        # at this point
 
 
 class RecursiveWatcher:
