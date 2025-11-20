@@ -9,7 +9,7 @@
 
 ''''A simple optionally-async python inotify library, focused on simplicity of use and operation, and leveraging modern Python features'''
 
-__version__ = '4.3.1'
+__version__ = '4.3.2'
 
 from contextlib import contextmanager
 from enum import IntFlag
@@ -674,6 +674,12 @@ class Inotify:
 
 
 class RecursiveInotify(Inotify):
+    '''A Recursive superclass of Inotify.
+
+    Adds the :meth:`add_recursive_watch` method, but otherwise works the same.
+
+    Automatically adds and removes subdirectories as they are added and removed.
+    '''
     _DIR_MASK = Mask.MOVED_FROM | Mask.MOVED_TO | Mask.CREATE | Mask.IGNORED
 
     def __init__(self) -> None:
@@ -683,6 +689,10 @@ class RecursiveInotify(Inotify):
     def add_recursive_watch(
         self, path: Path, mask: Optional[Mask] = None
     ) -> List[Watch]:
+        '''Add a watch for the given directory path, which must be a directory, and all subdirectories.
+
+        Returns the watch for this path and all subdirectories, breadth-first (so the passed-in path is always first in the list.
+        '''
         if not path.is_dir():
             raise ValueError('Path must refer to a directory')
         watches: List[Watch] = []
