@@ -9,7 +9,7 @@
 
 import os
 
-if os.uname().sysname.lower() == 'linux':
+if os.uname().sysname.lower() == 'linux' and os.environ.get('READTHEDOCS', 'false').lower() != 'true':
     import ctypes
     import ctypes.util
 
