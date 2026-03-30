@@ -3,13 +3,13 @@
 # This Source Code Form is subject to the terms of the Mozilla Public License,
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at https://mozilla.org/MPL/2.0/.
-# This code is Copyright 2019 - 2023 Absolute Performance, Inc, and 2024 - 2025
+# This code is Copyright 2019 - 2023 Absolute Performance, Inc, and 2024 - 2026
 # ProCern Technology Solutions.
 # It is written and maintained by Taylor C. Richberger <taylor.richberger@procern.com>
 
 ''''A simple optionally-async python inotify library, focused on simplicity of use and operation, and leveraging modern Python features'''
 
-__version__ = '4.4.1'
+__version__ = '4.4.2'
 
 from contextlib import contextmanager
 from enum import IntFlag
