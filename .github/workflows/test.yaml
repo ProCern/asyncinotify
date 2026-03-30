@@ -1,0 +1,94 @@
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+env:
+  runtest: >-
+    python3 -mvenv --system-site-packages /mnt/venv &&
+    /mnt/venv/bin/pip install --upgrade wheel &&
+    /mnt/venv/bin/pip install --upgrade pip &&
+    /mnt/venv/bin/pip install '/mnt/app[test]' &&
+    cd /mnt/app &&
+    /mnt/venv/bin/python -munittest
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event_name == 'pull_request' && 'testing' || '' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Python
+          - image: python:3.6
+          - image: python:3.7
+          - image: python:3.8
+          - image: python:3.9
+          - image: python:3.10
+          - image: python:3.11
+          - image: python:3.12
+          - image: python:3.13
+          - image: python:3.14
+
+          # Debian
+          - image: debian:bullseye
+            setup: apt update && apt upgrade -y && apt install -y python3 sqlite3 python3-pip python3-venv
+          - image: debian:bookworm
+            setup: apt update && apt upgrade -y && apt install -y python3 sqlite3 python3-pip python3-venv
+          - image: debian:trixie
+            setup: apt update && apt upgrade -y && apt install -y python3 sqlite3 python3-pip python3-venv
+
+          # Ubuntu
+          - image: ubuntu:20.04
+            setup: apt update && apt upgrade -y && apt install -y python3 sqlite3 python3-pip python3-venv
+          - image: ubuntu:22.04
+            setup: apt update && apt upgrade -y && apt install -y python3 sqlite3 python3-pip python3-venv
+          - image: ubuntu:24.04
+            setup: apt update && apt upgrade -y && apt install -y python3 sqlite3 python3-pip python3-venv
+
+          # Fedora
+          - image: fedora:42
+            setup: dnf update -y && dnf install -y python3 sqlite python3-pip
+          - image: fedora:43
+            setup: dnf update -y && dnf install -y python3 sqlite python3-pip
+
+          # RHEL (AlmaLinux)
+          - image: almalinux:8
+            setup: dnf update -y && dnf install -y python3 sqlite python3-pip
+          - image: almalinux:9
+            setup: dnf update -y && dnf install -y python3 sqlite python3-pip
+          - image: almalinux:10
+            setup: dnf update -y && dnf install -y python3 sqlite python3-pip
+
+          # CentOS Stream
+          - image: quay.io/centos/centos:stream9
+            setup: dnf update -y && dnf install -y python3 sqlite python3-pip
+          - image: quay.io/centos/centos:stream10
+            setup: dnf update -y && dnf install -y python3 sqlite python3-pip
+
+          # Alpine
+          - image: alpine:3.20
+            setup: apk update && apk upgrade && apk add python3 sqlite
+          - image: alpine:3.21
+            setup: apk update && apk upgrade && apk add python3 sqlite
+          - image: alpine:3.22
+            setup: apk update && apk upgrade && apk add python3 sqlite
+          - image: alpine:3.23
+            setup: apk update && apk upgrade && apk add python3 sqlite
+
+    name: ${{ matrix.image }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run tests
+        env:
+          SETUP: ${{ matrix.setup }}
+        run: |
+          docker run --rm \
+            -e PYTHONPATH=/mnt/app/src \
+            -v "${{ github.workspace }}:/mnt/app:ro" \
+            "${{ matrix.image }}" \
+            /bin/sh -c "set -euxf; ${SETUP:+$SETUP &&} $runtest"
