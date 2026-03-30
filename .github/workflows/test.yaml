@@ -1,3 +1,5 @@
+name: test
+
 on:
   push:
     branches:
@@ -5,6 +7,7 @@ on:
   pull_request:
     branches:
       - master
+  workflow_call:
 
 env:
   runtest: >-
@@ -73,7 +76,7 @@ jobs:
 
     name: ${{ matrix.image }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Run tests
         env:
           SETUP: ${{ matrix.setup == 'apt' && env.apt_setup || matrix.setup == 'dnf' && env.dnf_setup || matrix.setup == 'apk' && env.apk_setup || '' }}
