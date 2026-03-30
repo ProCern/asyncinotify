@@ -21,7 +21,7 @@ from warnings import warn
 import weakref
 from weakref import ReferenceType
 from asyncio import Future
-import select
+import selectors
 from collections import deque
 
 # Python 3.7 suggests get_running_loop for library code
@@ -60,15 +60,15 @@ class InitFlags(IntFlag):
 
     __slots__ = ()
 
-    #: Set the close-on-exec (FD_CLOEXEC) flag on the new file descriptor.  See
-    #: the description of the O_CLOEXEC flag in  open(2)  for  reasons why this
+    #: Set the close-on-exec (FD_CLOEXEC) flag on the new file descriptor if it exists.
+    #: See the description of the O_CLOEXEC flag in  open(2)  for  reasons why this
     #: may be useful.
-    CLOEXEC = os.O_CLOEXEC
+    CLOEXEC = getattr(os, 'O_CLOEXEC', 0)
 
-    #: Set the O_NONBLOCK file status flag on the open file description (see
+    #: Set the O_NONBLOCK file status flag on the open file description if it exists (see
     #: open(2)) referred to by the new file descriptor.  Using this flag saves
     #: extra calls to fcntl(2) to achieve the same result.
-    NONBLOCK = os.O_NONBLOCK
+    NONBLOCK = getattr(os, 'O_CLOEXEC', 0)
 
 
 class Mask(IntFlag):
@@ -411,11 +411,11 @@ class Inotify:
         full-sized.
 
     :param sync_timeout: If this is not None, then sync_get will wait on an
-        epoll call for that long, and return None on a timeout.  Normal
+        selector call for that long, and return None on a timeout.  Normal
         iteration will also exit on a timeout.
     '''
 
-    __slots__ = ('_fd', '_watches', '_events', '_epoll', '_sync_timeout', '_cache_size', '__weakref__')
+    __slots__ = ('_fd', '_watches', '_events', '_selector', '_sync_timeout', '_cache_size', '__weakref__')
 
     def __init__(self,
                  flags: InitFlags = InitFlags.CLOEXEC | InitFlags.NONBLOCK,
@@ -429,8 +429,8 @@ class Inotify:
         self._watches: Dict[int, Watch] = {}
 
         self._events: List[Event] = []
-        self._epoll: select.epoll = select.epoll()
-        self._epoll.register(fd, select.EPOLLIN)
+        self._selector: selectors.DefaultSelector = selectors.DefaultSelector()
+        self._selector.register(fd, selectors.EVENT_READ)
         self.sync_timeout = sync_timeout
 
     @property
@@ -537,7 +537,7 @@ class Inotify:
         '''
         self.sync_timeout = None
         if self._fd is not None:
-            self._epoll.close()
+            self._selector.close()
             os.close(self._fd)
             self._fd = None
 
@@ -641,7 +641,7 @@ class Inotify:
         '''
         if not self._events:
             if self.sync_timeout is not None:
-                if not self._epoll.poll(self.sync_timeout, 1):
+                if not self._selector.select(self.sync_timeout):
                     return None
             future = _FakeFuture()
             self._get(future)

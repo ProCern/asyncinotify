@@ -66,6 +66,7 @@ This is supported and tested on the following:
 * Fedora 42 and 43
 * Alma Linux 8, 9 and 10 (Should be equivalent to RHEL)
 * Alpine Linux 3.20 through 3.23
+* z/OS 2.5 or newer (needs asyncinotify_zos helper package)
 
 We regularly remove out-of-support OSes from the tests and add new releases.
 

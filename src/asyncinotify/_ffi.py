@@ -10,7 +10,7 @@ from typing import Optional
 
 import os
 
-if (os.uname().sysname.lower() in {'linux', 'freebsd'}) and os.environ.get('READTHEDOCS', 'false').lower() != 'true':
+if (os.uname().sysname.lower() in {'linux', 'freebsd', 'os/390'}) and os.environ.get('READTHEDOCS', 'false').lower() != 'true':
     import ctypes
     import ctypes.util
 
@@ -41,6 +41,15 @@ if (os.uname().sysname.lower() in {'linux', 'freebsd'}) and os.environ.get('READ
         if inotify_path:
             return inotify_path
 
+        # z/OS UNIX
+        try:
+            import asyncinotify_zos  # noqa
+            libzosinotify = ctypes.CDLL(None)
+            if hasattr(libzosinotify, "inotify_init"):
+                return None
+        except ImportError:
+            pass
+
         raise RuntimeError("inotify support was not found")    
     
     def check_return(value: int) -> int:
@@ -68,4 +77,4 @@ if (os.uname().sysname.lower() in {'linux', 'freebsd'}) and os.environ.get('READ
     libc.inotify_rm_watch.argtypes = (ctypes.c_int, ctypes.c_int)
 else:
     import warnings
-    warnings.warn('inotify is a Linux and FreeBSD API.  You can package this library on other platforms, but not run it.')
+    warnings.warn('inotify is a Linux, FreeBSD or z/OS API.  You can package this library on other platforms, but not run it.')
