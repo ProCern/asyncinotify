@@ -116,7 +116,7 @@ that I would feel comfortable using.
 License
 -------
 
-This code is Copyright 2019 - 2023 Absolute Performance, Inc, and 2024 - 2025
+This code is Copyright 2019 - 2023 Absolute Performance, Inc, and 2024 - 2026
 ProCern Technology Solutions.
 
 It is written and maintained by `Taylor C. Richberger <mailto:taylor.richberger@procern.com>`_.

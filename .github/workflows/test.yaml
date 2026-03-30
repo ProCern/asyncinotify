@@ -27,7 +27,6 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
-    environment: ${{ github.event_name == 'pull_request' && 'testing' || '' }}
     strategy:
       fail-fast: false
       matrix:
