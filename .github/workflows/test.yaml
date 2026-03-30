@@ -15,6 +15,15 @@ env:
     cd /mnt/app &&
     /mnt/venv/bin/python -munittest
 
+  apt_setup: >-
+    apt update && apt upgrade -y && apt install -y python3 sqlite3 python3-pip python3-venv
+
+  dnf_setup: >-
+    dnf update -y && dnf install -y python3 sqlite python3-pip
+
+  apk_setup: >-
+    apk update && apk upgrade && apk add python3 sqlite
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -24,68 +33,51 @@ jobs:
       matrix:
         include:
           # Python
-          - image: python:3.6
-          - image: python:3.7
-          - image: python:3.8
-          - image: python:3.9
-          - image: python:3.10
-          - image: python:3.11
-          - image: python:3.12
-          - image: python:3.13
-          - image: python:3.14
+          - image: docker.io/python:3.6
+          - image: docker.io/python:3.7
+          - image: docker.io/python:3.8
+          - image: docker.io/python:3.9
+          - image: docker.io/python:3.10
+          - image: docker.io/python:3.11
+          - image: docker.io/python:3.12
+          - image: docker.io/python:3.13
+          - image: docker.io/python:3.14
 
           # Debian
-          - image: debian:bullseye
-            setup: apt update && apt upgrade -y && apt install -y python3 sqlite3 python3-pip python3-venv
-          - image: debian:bookworm
-            setup: apt update && apt upgrade -y && apt install -y python3 sqlite3 python3-pip python3-venv
-          - image: debian:trixie
-            setup: apt update && apt upgrade -y && apt install -y python3 sqlite3 python3-pip python3-venv
+          - { image: "docker.io/debian:bullseye", setup: apt }
+          - { image: "docker.io/debian:bookworm", setup: apt }
+          - { image: "docker.io/debian:trixie", setup: apt }
 
           # Ubuntu
-          - image: ubuntu:20.04
-            setup: apt update && apt upgrade -y && apt install -y python3 sqlite3 python3-pip python3-venv
-          - image: ubuntu:22.04
-            setup: apt update && apt upgrade -y && apt install -y python3 sqlite3 python3-pip python3-venv
-          - image: ubuntu:24.04
-            setup: apt update && apt upgrade -y && apt install -y python3 sqlite3 python3-pip python3-venv
+          - { image: "docker.io/ubuntu:20.04", setup: apt }
+          - { image: "docker.io/ubuntu:22.04", setup: apt }
+          - { image: "docker.io/ubuntu:24.04", setup: apt }
 
           # Fedora
-          - image: fedora:42
-            setup: dnf update -y && dnf install -y python3 sqlite python3-pip
-          - image: fedora:43
-            setup: dnf update -y && dnf install -y python3 sqlite python3-pip
+          - { image: "docker.io/fedora:42", setup: dnf }
+          - { image: "docker.io/fedora:43", setup: dnf }
 
           # RHEL (AlmaLinux)
-          - image: almalinux:8
-            setup: dnf update -y && dnf install -y python3 sqlite python3-pip
-          - image: almalinux:9
-            setup: dnf update -y && dnf install -y python3 sqlite python3-pip
-          - image: almalinux:10
-            setup: dnf update -y && dnf install -y python3 sqlite python3-pip
+          - { image: "docker.io/almalinux:8", setup: dnf }
+          - { image: "docker.io/almalinux:9", setup: dnf }
+          - { image: "docker.io/almalinux:10", setup: dnf }
 
           # CentOS Stream
-          - image: quay.io/centos/centos:stream9
-            setup: dnf update -y && dnf install -y python3 sqlite python3-pip
-          - image: quay.io/centos/centos:stream10
-            setup: dnf update -y && dnf install -y python3 sqlite python3-pip
+          - { image: "quay.io/centos/centos:stream9", setup: dnf }
+          - { image: "quay.io/centos/centos:stream10", setup: dnf }
 
           # Alpine
-          - image: alpine:3.20
-            setup: apk update && apk upgrade && apk add python3 sqlite
-          - image: alpine:3.21
-            setup: apk update && apk upgrade && apk add python3 sqlite
-          - image: alpine:3.22
-            setup: apk update && apk upgrade && apk add python3 sqlite
-          - image: alpine:3.23
-            setup: apk update && apk upgrade && apk add python3 sqlite
+          - { image: "docker.io/alpine:3.20", setup: apk }
+          - { image: "docker.io/alpine:3.21", setup: apk }
+          - { image: "docker.io/alpine:3.22", setup: apk }
+          - { image: "docker.io/alpine:3.23", setup: apk }
 
     name: ${{ matrix.image }}
     steps:
       - uses: actions/checkout@v4
       - name: Run tests
         env:
-          SETUP: ${{ matrix.setup }}
+          SETUP: ${{ matrix.setup == 'apt' && env.apt_setup || matrix.setup == 'dnf' && env.dnf_setup || matrix.setup == 'apk' && env.apk_setup || '' }}
         run: |
           docker run --rm \
             -e PYTHONPATH=/mnt/app/src \
