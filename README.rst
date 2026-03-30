@@ -58,15 +58,12 @@ synchronous iteration.
 Support
 -------
 
-This is supported and tested on the following:
+You can examine `our testing matrix <https://github.com/ProCern/asyncinotify/blob/master/.github/workflows/test.yaml>`_ to see all the hosts that we actively test on.
 
-* Python 3.6, 3.7, 3.8, 3.9, 3.10, 3.11, 3.12, 3.13, and 3.14
-* Debian bullseye, bookworm, and trixie
-* Ubuntu 20.04, 22.04, and 24.04
-* Fedora 42 and 43
-* Alma Linux 8, 9 and 10 (Should be equivalent to RHEL)
-* Alpine Linux 3.20 through 3.23
-* z/OS 2.5 or newer (needs [asyncinotify_zos helper package](https://github.com/ocurero/asyncinotify_zos))
+Additionally, there is consideration and code for the following platforms, though they are not tested by the maintainer of this project:
+
+* FreeBSD 15+
+* z/OS 2.5 or newer (needs `asyncinotify_zos helper package <https://github.com/ocurero/asyncinotify_zos>`_)
 
 We regularly remove out-of-support OSes from the tests and add new releases.
 
