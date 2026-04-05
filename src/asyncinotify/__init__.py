@@ -432,6 +432,7 @@ class Inotify:
         self._selector: selectors.DefaultSelector = selectors.DefaultSelector()
         self._selector.register(fd, selectors.EVENT_READ)
         self.sync_timeout = sync_timeout
+        self._finalizer = weakref.finalize(self, self.close)
 
     @property
     def sync_timeout(self) -> Optional[float]:
@@ -518,9 +519,6 @@ class Inotify:
         return self
 
     def __exit__(self, *args, **kwargs) -> None:
-        self.close()
-
-    def __del__(self) -> None:
         self.close()
 
     def close(self) -> None:
