@@ -9,7 +9,7 @@
 
 ''''A simple optionally-async python inotify library, focused on simplicity of use and operation, and leveraging modern Python features'''
 
-__version__ = '4.4.3'
+__version__ = '4.4.4'
 
 from contextlib import contextmanager
 from enum import IntFlag
