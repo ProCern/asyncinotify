@@ -396,6 +396,9 @@ class _FakeFuture:
     def result(self) -> List[Event]:
         return self._result
 
+def _inotify_finalize(selector: selectors.BaseSelector, fd: int) -> None:
+    selector.close()
+    os.close(fd)
 
 class Inotify:
     '''Core Inotify class.
@@ -415,14 +418,14 @@ class Inotify:
         iteration will also exit on a timeout.
     '''
 
-    __slots__ = ('_fd', '_watches', '_events', '_selector', '_sync_timeout', '_cache_size', '__weakref__')
+    __slots__ = ('_fd', '_watches', '_events', '_selector', '_sync_timeout', '_cache_size', '_finalizer', '__weakref__')
 
     def __init__(self,
                  flags: InitFlags = InitFlags.CLOEXEC | InitFlags.NONBLOCK,
                  cache_size: int = 10, sync_timeout: Optional[float] = None) -> None:
         self.cache_size = cache_size
         fd = _ffi.libc.inotify_init1(flags)
-        self._fd: Optional[int] = fd
+        self._fd: int = fd
 
         # Watches dict used for matching events up with the watch descriptor,
         # in order to get the full item path.
@@ -432,7 +435,7 @@ class Inotify:
         self._selector: selectors.DefaultSelector = selectors.DefaultSelector()
         self._selector.register(fd, selectors.EVENT_READ)
         self.sync_timeout = sync_timeout
-        self._finalizer = weakref.finalize(self, self.close)
+        self._finalizer = weakref.finalize(self, _inotify_finalize, self._selector, fd)
 
     @property
     def sync_timeout(self) -> Optional[float]:
@@ -451,7 +454,7 @@ class Inotify:
     def fd(self) -> int:
         '''Get the raw file descriptor.
         '''
-        if self._fd is None:
+        if not self._finalizer.alive:
             raise ValueError('Can not work with closed inotify')
         else:
             return self._fd
@@ -534,10 +537,7 @@ class Inotify:
         manager.
         '''
         self.sync_timeout = None
-        if self._fd is not None:
-            self._selector.close()
-            os.close(self._fd)
-            self._fd = None
+        self._finalizer()
 
     @property
     def cache_size(self) -> int:
