@@ -396,9 +396,27 @@ class _FakeFuture:
     def result(self) -> List[Event]:
         return self._result
 
-def _inotify_finalize(selector: selectors.BaseSelector, fd: int) -> None:
-    selector.close()
-    os.close(fd)
+class _InotifyResources:
+    '''Resources class for things that need to be cleaned up in the
+    Inotify core class.
+
+    This makes weakref-based finalization more convenient.
+    '''
+    __slots__ = ('fd', 'selector', 'sync_timeout')
+
+    fd: int
+    selector: selectors.BaseSelector
+    sync_timeout: Optional[float]
+
+    def __init__(self, fd: int, sync_timeout: Optional[float]) -> None:
+        self.fd = fd
+        self.sync_timeout = sync_timeout
+        self.selector = selectors.DefaultSelector()
+
+    def close(self):
+        self.sync_timeout = None
+        os.close(self.fd)
+        self.selector.close()
 
 class Inotify:
     '''Core Inotify class.
@@ -418,24 +436,23 @@ class Inotify:
         iteration will also exit on a timeout.
     '''
 
-    __slots__ = ('_fd', '_watches', '_events', '_selector', '_sync_timeout', '_cache_size', '_finalizer', '__weakref__')
+    __slots__ = ('_resources', '_watches', '_events', '_cache_size', '_finalizer', '__weakref__')
 
     def __init__(self,
                  flags: InitFlags = InitFlags.CLOEXEC | InitFlags.NONBLOCK,
                  cache_size: int = 10, sync_timeout: Optional[float] = None) -> None:
         self.cache_size = cache_size
         fd = _ffi.libc.inotify_init1(flags)
-        self._fd: int = fd
+
+        self._resources = _InotifyResources(fd=fd, sync_timeout=sync_timeout)
+        self._finalizer = weakref.finalize(self, self._resources.close)
+        self._resources.selector.register(fd, selectors.EVENT_READ)
 
         # Watches dict used for matching events up with the watch descriptor,
         # in order to get the full item path.
         self._watches: Dict[int, Watch] = {}
 
         self._events: List[Event] = []
-        self._selector: selectors.DefaultSelector = selectors.DefaultSelector()
-        self._selector.register(fd, selectors.EVENT_READ)
-        self.sync_timeout = sync_timeout
-        self._finalizer = weakref.finalize(self, _inotify_finalize, self._selector, fd)
 
     @property
     def sync_timeout(self) -> Optional[float]:
@@ -444,11 +461,11 @@ class Inotify:
         Set this to None to disable and -1 to wait forever.  These options can
         be different depending on the blocking flags selected.
         '''
-        return self._sync_timeout
+        return self._resources.sync_timeout
 
     @sync_timeout.setter
     def sync_timeout(self, value: Optional[float]) -> None:
-        self._sync_timeout = value
+        self._resources.sync_timeout = value
 
     @property
     def fd(self) -> int:
@@ -457,7 +474,7 @@ class Inotify:
         if not self._finalizer.alive:
             raise ValueError('Can not work with closed inotify')
         else:
-            return self._fd
+            return self._resources.fd
 
     def add_watch(self, path: Union[os.PathLike, bytes, str], mask: Mask) -> Watch:
         '''Add a watch dir.
@@ -536,7 +553,6 @@ class Inotify:
         This is automatically called when this class is used as a context
         manager.
         '''
-        self.sync_timeout = None
         self._finalizer()
 
     @property
@@ -639,7 +655,7 @@ class Inotify:
         '''
         if not self._events:
             if self.sync_timeout is not None:
-                if not self._selector.select(self.sync_timeout):
+                if not self._resources.selector.select(self.sync_timeout):
                     return None
             future = _FakeFuture()
             self._get(future)
